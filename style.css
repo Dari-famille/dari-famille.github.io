@@ -423,6 +423,17 @@ body {
   direction: rtl;
   font-size: 1.2rem;
 }
+/* Les deux faces d'une paire doivent se distinguer d'un coup d'œil : la
+   prononciation en terracotta comme partout dans l'app, le sens français en
+   gris comme sur les fiches de vocabulaire. */
+.memory-text.memory-latin {
+  color: var(--terracotta);
+}
+.memory-text.memory-fr {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
 
 .quiz-next {
   margin-top: 18px;
