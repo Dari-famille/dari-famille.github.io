@@ -197,7 +197,10 @@ function renderContent() {
   toggle.appendChild(listBtn);
   toggle.appendChild(quizBtn);
   toggle.appendChild(memoryBtn);
-  toggle.appendChild(builderBtn);
+  // Le générateur de phrases demande de lire des mots et de composer : hors
+  // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
+  // décourage plus qu'il n'apprend.
+  if (state.mode !== "kid") toggle.appendChild(builderBtn);
   content.appendChild(toggle);
 
   renderProgress(content);
@@ -591,8 +594,11 @@ function renderSituations(content) {
 // transcription latine à l'écriture arabe, pour muscler la lecture.
 function buildMemoryDeck() {
   const cat = getCategory();
-  const pool = shuffle(cat.items).slice(0, 6);
   const kid = state.mode === "kid";
+  // Six paires font douze cartes : bien au-delà de ce qu'un enfant de quatre
+  // ans peut garder en tête. Il ne perd pas, il abandonne. Quatre paires se
+  // terminent, et une partie qui se termine donne envie d'en refaire une.
+  const pool = shuffle(cat.items).slice(0, kid ? 4 : 6);
   const cards = [];
   pool.forEach((item, i) => {
     cards.push({ item, kind: kid ? "emoji" : "latin", pairId: i });
