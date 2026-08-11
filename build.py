@@ -16,6 +16,8 @@ import sys
 ROOT = pathlib.Path(__file__).parent
 SRC = ROOT / "index.html"
 OUT = ROOT / "standalone.html"
+RELECTURE_SRC = ROOT / "relecture-template.html"
+RELECTURE_OUT = ROOT / "relecture.html"
 
 
 def read(name):
@@ -80,6 +82,42 @@ def main():
 
     OUT.write_text(html, encoding="utf-8")
     print(f"standalone.html régénéré ({len(html) / 1024:.0f} Ko)")
+
+    build_relecture()
+
+
+def build_relecture():
+    """Page de relecture autonome, à envoyer à la relectrice native.
+
+    Elle doit tenir dans un seul fichier : il est transmis par message et
+    ouvert sur un téléphone, sans serveur ni connexion.
+    """
+    if not RELECTURE_SRC.exists():
+        print("  (pas de relecture-template.html, page de relecture ignorée)")
+        return
+
+    html = RELECTURE_SRC.read_text(encoding="utf-8")
+    js = read("situations.js")
+    html, n = re.subn(
+        r'\s*<script src="situations\.js"></script>',
+        "\n<script>\n" + js + "</script>",
+        html,
+        count=1,
+    )
+    if n != 1:
+        sys.exit("La balise script de situations.js est introuvable dans le modèle de relecture")
+
+    RELECTURE_OUT.write_text(html, encoding="utf-8")
+
+    # Compte les lignes à relire, pour savoir tout de suite ce qu'on demande.
+    # Les lignes de commentaire sont écartées : l'en-tête du fichier documente
+    # `check: true` et serait comptée comme une entrée.
+    pending = sum(
+        1
+        for line in js.splitlines()
+        if not line.lstrip().startswith("//") and re.search(r"check:\s*true", line)
+    )
+    print(f"relecture.html régénéré ({len(html) / 1024:.0f} Ko, {pending} expressions à relire)")
 
 
 if __name__ == "__main__":

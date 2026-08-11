@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Dari — relecture</title>
+<style>
+  :root {
+    --bg: #f8f0dd; --surface: #fff; --ink: #2a2013; --muted: #7a6d55;
+    --majorelle: #33509e; --emerald: #1f7a5c; --terracotta: #b6502e;
+    --saffron: #d99a2b; --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161c27; --surface: #202838; --ink: #eee2c8; --muted: #9aa1b5;
+      --majorelle: #8fa8ec; --emerald: #57c99b; --terracotta: #e88c62;
+      --saffron: #f0c369;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px 16px 120px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; max-width: 640px; margin-inline: auto;
+  }
+  h1 { font-family: Georgia, serif; color: var(--majorelle); font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 22px; }
+  .howto {
+    background: var(--surface); border-radius: var(--radius); padding: 14px 16px;
+    font-size: 0.9rem; margin-bottom: 26px;
+    border-inline-start: 4px solid var(--saffron);
+  }
+  .howto p { margin: 0 0 8px; }
+  .howto p:last-child { margin-bottom: 0; }
+  h2 {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin: 30px 0 10px;
+  }
+  .card {
+    background: var(--surface); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .fr { font-weight: 600; margin-bottom: 8px; }
+  .latin { color: var(--terracotta); font-size: 1.12rem; font-weight: 600; }
+  .arabic {
+    font-size: 1.5rem; direction: rtl; margin: 4px 0 8px;
+    font-family: "Geeza Pro", "Noto Naskh Arabic", serif;
+  }
+  .note {
+    font-size: 0.84rem; color: var(--muted); margin: 8px 0 0;
+    padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
+  }
+  .verdict { display: flex; gap: 8px; margin-top: 12px; }
+  .verdict button {
+    flex: 1; padding: 9px; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+    border: 2px solid color-mix(in srgb, var(--muted) 35%, transparent);
+    background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .verdict button.ok.on { background: var(--emerald); border-color: var(--emerald); color: #fff; }
+  .verdict button.ko.on { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
+  textarea {
+    width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px;
+    border: 2px solid color-mix(in srgb, var(--muted) 30%, transparent);
+    background: var(--bg); color: var(--ink); font: inherit; font-size: 0.95rem;
+    resize: vertical; min-height: 62px; display: none;
+  }
+  textarea.show { display: block; }
+  .done { opacity: 0.55; }
+  .bar {
+    position: fixed; inset-inline: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--surface); box-shadow: 0 -2px 14px rgba(0,0,0,0.12);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .bar .count { font-size: 0.86rem; color: var(--muted); flex: 1; }
+  .bar button {
+    padding: 11px 16px; border: none; border-radius: 10px; background: var(--majorelle);
+    color: #fff; font-weight: 700; font-size: 0.92rem; cursor: pointer;
+  }
+  .bar button:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+
+<h1>🌙 Dari — relecture</h1>
+<p class="sub">Les expressions dont je ne suis pas sûr. Les autres ont déjà été vérifiées.</p>
+
+<div class="howto">
+  <p><strong>Comment faire :</strong> pour chaque phrase, dites si elle est juste ou non. Si elle est fausse, écrivez la bonne version — même approximativement, en lettres latines suffit.</p>
+  <p>Vos réponses sont gardées sur ce téléphone : vous pouvez vous arrêter et reprendre plus tard.</p>
+  <p>À la fin, le bouton en bas copie tout : il n'y a plus qu'à coller dans un message.</p>
+</div>
+
+<div id="list"></div>
+
+<div class="bar">
+  <span class="count" id="count"></span>
+  <button id="copy" disabled>Copier</button>
+</div>
+
+<script src="situations.js"></script>
+<script>
+  const STORE = "dari-relecture-v1";
+  let answers = {};
+  try { answers = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { answers = {}; }
+
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(answers)); } catch (e) {}
+  }
+
+  const items = linesToCheck();
+  const list = document.getElementById("list");
+  let lastSituation = null;
+
+  // Déclarés avant la boucle : paint() appelle refresh() dès la première
+  // fiche, et des const déclarés plus bas seraient encore inaccessibles.
+  const countEl = document.getElementById("count");
+  const copyBtn = document.getElementById("copy");
+
+  function refresh() {
+    const done = Object.keys(answers).length;
+    countEl.textContent = done + " / " + items.length + " relues";
+    copyBtn.disabled = done === 0;
+  }
+
+  items.forEach((item, i) => {
+    if (item.situation !== lastSituation) {
+      const h = document.createElement("h2");
+      h.textContent = item.situation;
+      list.appendChild(h);
+      lastSituation = item.situation;
+    }
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="fr">' + item.fr + "</div>" +
+      '<div class="latin">' + item.latin + "</div>" +
+      '<div class="arabic">' + item.arabic + "</div>" +
+      (item.note ? '<p class="note">' + item.note + "</p>" : "");
+
+    const verdict = document.createElement("div");
+    verdict.className = "verdict";
+    const okBtn = document.createElement("button");
+    okBtn.className = "ok";
+    okBtn.textContent = "✅ C'est juste";
+    const koBtn = document.createElement("button");
+    koBtn.className = "ko";
+    koBtn.textContent = "✏️ À corriger";
+    verdict.append(okBtn, koBtn);
+
+    const fix = document.createElement("textarea");
+    fix.placeholder = "La bonne façon de le dire…";
+
+    function paint() {
+      const a = answers[i];
+      // Le second argument de toggle() doit être un vrai booléen : passer
+      // undefined le fait basculer au lieu de forcer l'état.
+      okBtn.classList.toggle("on", !!a && a.v === "ok");
+      koBtn.classList.toggle("on", !!a && a.v === "ko");
+      fix.classList.toggle("show", !!a && a.v === "ko");
+      card.classList.toggle("done", !!a);
+      if (a && a.fix !== undefined) fix.value = a.fix;
+      refresh();
+    }
+
+    okBtn.onclick = () => { answers[i] = { v: "ok" }; save(); paint(); };
+    koBtn.onclick = () => {
+      answers[i] = { v: "ko", fix: (answers[i] && answers[i].fix) || "" };
+      save(); paint(); fix.focus();
+    };
+    fix.oninput = () => {
+      answers[i] = { v: "ko", fix: fix.value };
+      save(); refresh();
+    };
+
+    card.append(verdict, fix);
+    list.appendChild(card);
+    paint();
+  });
+
+  copyBtn.onclick = () => {
+    // Ne remonte que les corrections : la liste des « c'est juste » n'apporte
+    // rien à qui doit reporter les changements dans le fichier.
+    const fixes = items
+      .map((item, i) => ({ item, a: answers[i] }))
+      .filter((x) => x.a && x.a.v === "ko");
+
+    let out = "Relecture Dari — " + Object.keys(answers).length + "/" + items.length + " relues\n";
+    out += fixes.length ? fixes.length + " à corriger :\n\n" : "\nRien à corriger 🎉";
+    fixes.forEach((x) => {
+      out += "• " + x.item.fr + "\n";
+      out += "  écrit : " + x.item.latin + "\n";
+      out += "  juste : " + (x.a.fix || "(à préciser)") + "\n\n";
+    });
+
+    navigator.clipboard.writeText(out).then(
+      () => { copyBtn.textContent = "✅ Copié"; setTimeout(() => (copyBtn.textContent = "Copier"), 1800); },
+      () => {
+        // Le presse-papiers peut être refusé hors HTTPS : on affiche le texte
+        // pour qu'il reste sélectionnable à la main.
+        prompt("Copiez ce texte :", out);
+      }
+    );
+  };
+
+  refresh();
+</script>
+</body>
+</html>
