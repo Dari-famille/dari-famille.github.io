@@ -547,6 +547,7 @@ function renderSituations(content) {
       <div class="line-fr">${line.fr}</div>
       <div class="line-latin">${line.latin}</div>
       <div class="line-arabic arabic">${line.arabic}</div>
+      ${line.from ? `<div class="line-from">↪ ${line.from}</div>` : ""}
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
     `;
     const btn = document.createElement("button");

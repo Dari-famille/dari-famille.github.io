@@ -780,12 +780,64 @@ const SITUATIONS = [
   },
 ];
 
+// ---- Kit de survie ----
+// Les dix phrases qui permettent de tenir une semaine entière. Elles existent
+// déjà ailleurs : on les référence au lieu de les recopier, pour qu'une
+// correction de la relectrice se propage partout au lieu de laisser traîner
+// une vieille version dans ce raccourci.
+const SURVIVAL_KIT = {
+  id: "kit-survie",
+  label: "Les 10 qui te sauvent la vie",
+  emoji: "🛟",
+  audience: "adult",
+  free: true,
+  intro:
+    "Si vous n'apprenez que dix choses avant de partir, apprenez celles-ci. " +
+    "Elles ne vous feront pas parler darija — elles vous feront tenir une " +
+    "semaine sans jamais être bloqué ni passer pour indifférent.",
+  refs: [
+    ["arrivee", "Bonjour à vous (salutation respectueuse)"],
+    ["arrivee", "Que Dieu te préserve (merci chaleureux)"],
+    ["je-comprends-pas", "Je ne parle pas bien le darija"],
+    ["je-comprends-pas", "Je n'ai pas compris"],
+    ["je-comprends-pas", "Doucement, s'il te plaît"],
+    ["mots-partout", "D'accord / OK"],
+    ["mots-partout", "Un peu"],
+    ["a-table", "Que Dieu te donne la santé (merci pour le repas)"],
+    ["a-table", "Je n'ai plus faim, merci"],
+    ["compliment-enfant", "Qu'il est beau ! (avec la formule protectrice)"],
+  ],
+};
+
+// Résout les références en vraies lignes et place le kit en tête de liste.
+// Une référence cassée (phrase renommée) est signalée en console plutôt que
+// d'échouer en silence et de produire un kit incomplet.
+(function buildSurvivalKit() {
+  const lines = [];
+  SURVIVAL_KIT.refs.forEach(([sitId, fr]) => {
+    const sit = SITUATIONS.find((s) => s.id === sitId);
+    const line = sit && sit.lines.find((l) => l.fr === fr);
+    if (!line) {
+      console.warn(`Kit de survie : référence introuvable — ${sitId} / ${fr}`);
+      return;
+    }
+    // On garde un lien vers la scène d'origine : une phrase isolée de son
+    // contexte perd la moitié de son intérêt.
+    lines.push({ ...line, from: sit.label });
+  });
+  SURVIVAL_KIT.lines = lines;
+  SITUATIONS.unshift(SURVIVAL_KIT);
+})();
+
 // Regroupe toutes les lignes marquées `check`, pour la relecture par un
 // locuteur natif. Sans cette vue il faudrait relire les six situations en
 // entier à chaque ajout.
 function linesToCheck() {
   const out = [];
   SITUATIONS.forEach((sit) => {
+    // Le kit de survie ne fait que pointer vers des phrases définies ailleurs :
+    // l'inclure ferait relire deux fois les mêmes expressions.
+    if (sit.id === SURVIVAL_KIT.id) return;
     sit.lines.forEach((line) => {
       if (line.check) out.push({ situation: sit.label, ...line });
     });

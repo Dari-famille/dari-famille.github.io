@@ -556,6 +556,9 @@ body {
   gap: 4px;
 }
 .line-fr { color: var(--muted); font-size: 0.9rem; }
+/* Dans le kit de survie, rappelle la scène d'origine : une phrase sortie de
+   son contexte perd la moitié de son intérêt. */
+.line-from { font-size: 0.78rem; color: var(--majorelle); opacity: 0.85; }
 .line-latin { font-size: 1.25rem; font-weight: 700; color: var(--terracotta); }
 .line-arabic { font-size: 1.4rem; direction: rtl; }
 /* La note culturelle est ce qui distingue l'app d'une liste de vocabulaire :
