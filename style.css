@@ -472,6 +472,75 @@ body {
   line-height: 1.4;
   opacity: 0.85;
 }
+/* ---- Écran d'accueil (première visite) ---- */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.welcome-box {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 30px 24px 22px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+.welcome-star { font-size: 2.6rem; line-height: 1; }
+.welcome-box h2 {
+  font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+  color: var(--majorelle);
+  margin: 10px 0 8px;
+  font-size: 1.55rem;
+}
+.welcome-lead {
+  margin: 0 0 22px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.welcome-q { margin: 0 0 12px; font-weight: 700; }
+.welcome-choices { display: grid; gap: 12px; }
+.welcome-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 16px;
+  border: 2px solid color-mix(in srgb, var(--majorelle) 30%, transparent);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.welcome-btn:hover {
+  border-color: var(--majorelle);
+  transform: translateY(-2px);
+}
+.welcome-emoji { font-size: 1.9rem; line-height: 1; }
+.welcome-btn strong { font-size: 1.05rem; }
+.welcome-sub { font-size: 0.82rem; color: var(--muted); }
+.welcome-skip {
+  margin-top: 16px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ---- Situations ----
    Les situations sont l'entrée principale du mode Adulte : leur bouton est
    distingué du reste de la barre pour qu'on le trouve sans le chercher. */

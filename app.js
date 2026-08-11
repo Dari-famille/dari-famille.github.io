@@ -1,8 +1,32 @@
+const MODE_KEY = "dari-mode-v1";
+
+// Le mode choisi est un réglage durable, pas une préférence de session : un
+// adulte qui revient le lendemain ne doit pas retomber sur l'interface enfant.
+function savedMode() {
+  try {
+    const m = localStorage.getItem(MODE_KEY);
+    return m === "adult" || m === "kid" ? m : "kid";
+  } catch (e) {
+    return "kid";
+  }
+}
+
+function saveMode(mode) {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch (e) {
+    /* sans stockage, le mode retombe sur enfant au rechargement */
+  }
+}
+
 // État de l'application
 const state = {
-  mode: "kid", // "kid" | "adult"
+  mode: savedMode(), // "kid" | "adult"
   categoryId: CATEGORIES.find((c) => c.kidFriendly).id,
-  section: "cards", // "cards"/"list" | "quiz" | "builder"
+  // La section par défaut suit le mode : le mode adulte affiche une liste,
+  // le mode enfant des cartes. Un adulte qui revient tombait sinon sur les
+  // grandes cartes illustrées destinées à un enfant.
+  section: savedMode() === "adult" ? "list" : "cards",
   quiz: {
     question: null,
     options: [],
@@ -66,6 +90,7 @@ function getCategory() {
 document.querySelectorAll(".mode-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     state.mode = btn.dataset.mode;
+    saveMode(state.mode);
     document
       .querySelectorAll(".mode-btn")
       .forEach((b) => b.classList.toggle("active", b === btn));
@@ -741,7 +766,93 @@ function renderBuilder(content) {
   content.appendChild(box);
 }
 
+// ---- Premier accueil ----
+// Sans cet écran, quelqu'un qui arrive d'un lien tombe sur une grille de
+// cartes sans savoir ce qu'est l'app ni par où commencer, et repart. On lui
+// pose la seule question qui change l'affichage — pour qui ? — puis on le
+// dépose directement sur le contenu le plus utile.
+const ONBOARD_KEY = "dari-onboard-v1";
+
+function alreadyWelcomed() {
+  try {
+    return localStorage.getItem(ONBOARD_KEY) === "1";
+  } catch (e) {
+    // Navigation privée : on montre l'accueil à chaque fois plutôt que de
+    // planter. Mieux vaut redemander que bloquer.
+    return false;
+  }
+}
+
+function markWelcomed() {
+  try {
+    localStorage.setItem(ONBOARD_KEY, "1");
+  } catch (e) {
+    /* sans stockage, l'accueil réapparaîtra : sans conséquence */
+  }
+}
+
+function renderWelcome() {
+  const overlay = document.createElement("div");
+  overlay.className = "welcome";
+  overlay.innerHTML = `
+    <div class="welcome-box">
+      <div class="welcome-star">🌙</div>
+      <h2>Bienvenue dans Dari</h2>
+      <p class="welcome-lead">
+        Le darija (arabe marocain) pour que vos enfants puissent parler
+        avec leurs grands-parents.
+      </p>
+      <p class="welcome-q">Vous l'utilisez pour qui&nbsp;?</p>
+      <div class="welcome-choices">
+        <button class="welcome-btn" data-mode="kid">
+          <span class="welcome-emoji">🧒</span>
+          <strong>Mon enfant</strong>
+          <span class="welcome-sub">Images et sons, sans lecture</span>
+        </button>
+        <button class="welcome-btn" data-mode="adult">
+          <span class="welcome-emoji">🧑</span>
+          <strong>Moi</strong>
+          <span class="welcome-sub">Situations réelles et usages</span>
+        </button>
+      </div>
+      <button class="welcome-skip">Explorer par moi-même</button>
+    </div>
+  `;
+
+  function close(mode) {
+    markWelcomed();
+    overlay.remove();
+    if (!mode) return;
+    state.mode = mode;
+    saveMode(mode);
+    document.querySelectorAll(".mode-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.mode === mode);
+    });
+    // On dépose l'utilisateur sur les situations : c'est là qu'est la valeur,
+    // pas dans une liste de vocabulaire qu'il trouverait n'importe où.
+    state.categoryId = SITUATIONS_ID;
+    state.situationId = null;
+    renderCategoryNav();
+    renderContent();
+  }
+
+  overlay.querySelectorAll(".welcome-btn").forEach((btn) => {
+    btn.addEventListener("click", () => close(btn.dataset.mode));
+  });
+  overlay.querySelector(".welcome-skip").addEventListener("click", () => close(null));
+
+  document.body.appendChild(overlay);
+}
+
 // ---- Démarrage ----
+// Le bouton « Enfant » porte la classe active dans le HTML : sans cette
+// synchronisation, un utilisateur revenant en mode adulte verrait l'interface
+// adulte avec « Enfant » surligné.
+document.querySelectorAll(".mode-btn").forEach((b) => {
+  b.classList.toggle("active", b.dataset.mode === state.mode);
+});
+
 renderCategoryNav();
 renderContent();
 saveScore();
+if (!alreadyWelcomed()) renderWelcome();
