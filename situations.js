@@ -84,6 +84,7 @@ const SITUATIONS = [
         fr: "Qu'il est beau ! (avec la formule protectrice)",
         latin: "Tbarkallah 3lih !",
         arabic: "تبارك الله عليه",
+        check: true,
         note:
           "LA règle à retenir. Complimenter un enfant — sa beauté, sa santé, " +
           "son intelligence — sans ajouter « tbarkallah » est perçu comme " +
@@ -295,6 +296,7 @@ const SITUATIONS = [
         fr: "Viens !",
         latin: "Aji !",
         arabic: "أجي",
+        check: true,
         kid: true,
         note:
           "Le mot numéro un. Une grand-mère qui appelle un enfant dit « aji », " +
@@ -361,6 +363,7 @@ const SITUATIONS = [
         fr: "Tu veux… ?",
         latin: "Bghiti… ?",
         arabic: "بغيتي؟",
+        check: true,
         kid: true,
         note:
           "La question la plus fréquente adressée à un enfant. Savoir répondre " +
@@ -584,6 +587,7 @@ const SITUATIONS = [
         fr: "Tu me manques",
         latin: "Twahachtek",
         arabic: "توحشتك",
+        check: true,
         kid: true,
         note:
           "Le mot le plus important de cette page. « Twahachtek » est bien " +
