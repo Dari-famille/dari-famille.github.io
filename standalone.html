@@ -1435,6 +1435,248 @@ const SITUATIONS = [
   },
 
   {
+    id: "je-comprends-pas",
+    label: "Je ne comprends pas",
+    emoji: "🤷",
+    audience: "both",
+    free: true,
+    intro:
+      "Les phrases les plus rentables de toute l'app. Elles ne servent pas à " +
+      "parler darija — elles servent à tenir dans une conversation qu'on ne " +
+      "suit pas, et à faire ralentir les autres sans les vexer.",
+    lines: [
+      {
+        fr: "Je ne parle pas bien le darija",
+        latin: "Ma kanhdarch mzyan darija",
+        arabic: "ما كنهضرش مزيان دارجة",
+        kid: true,
+        check: true,
+        note:
+          "À dire d'entrée. Elle désamorce tout : les gens ralentissent " +
+          "d'eux-mêmes et apprécient l'effort au lieu de juger le niveau.",
+      },
+      {
+        fr: "Je suis en train d'apprendre",
+        latin: "Kant3allem",
+        arabic: "كنتعلم",
+        kid: true,
+        check: true,
+        note: "Change complètement le regard : vous n'êtes plus un touriste.",
+      },
+      {
+        fr: "Je n'ai pas compris",
+        latin: "Ma fhemtch",
+        arabic: "ما فهمتش",
+        kid: true,
+      },
+      {
+        fr: "Répète, s'il te plaît",
+        latin: "3awed 3afak",
+        arabic: "عاود عافاك",
+        kid: true,
+      },
+      {
+        fr: "Doucement, s'il te plaît",
+        latin: "Bchwiya 3afak",
+        arabic: "بشوية عافاك",
+        kid: true,
+        note: "Plus efficace que « répète » : le problème est le débit, pas le mot.",
+      },
+      {
+        fr: "Comment on dit ça ?",
+        latin: "Kifach kaygoulou hadchi ?",
+        arabic: "كيفاش كيقولو هادشي؟",
+        check: true,
+        note:
+          "La question qui fait basculer une conversation en leçon. Les gens " +
+          "adorent qu'on leur demande.",
+      },
+      {
+        fr: "Qu'est-ce que ça veut dire ?",
+        latin: "Achno kat3ni ?",
+        arabic: "أشنو كتعني؟",
+        check: true,
+      },
+    ],
+  },
+
+  {
+    id: "telephone",
+    label: "Au téléphone avec les grands-parents",
+    emoji: "📞",
+    audience: "both",
+    free: false,
+    intro:
+      "Entre deux séjours, c'est le seul lien qui reste. Un appel de trois " +
+      "minutes où l'enfant dit quatre phrases vaut plus qu'une semaine de " +
+      "vocabulaire.",
+    lines: [
+      {
+        fr: "Allô, c'est moi",
+        latin: "Allo, ana",
+        arabic: "ألو، أنا",
+        kid: true,
+      },
+      {
+        fr: "Tu m'entends ?",
+        latin: "Katsem3ni ?",
+        arabic: "كتسمعني؟",
+        kid: true,
+        check: true,
+        note: "À un homme : « katsem3ni », à une femme : « katsem3ini ».",
+      },
+      {
+        fr: "Tu me manques",
+        latin: "Twahachtek",
+        arabic: "توحشتك",
+        kid: true,
+        note:
+          "Le mot le plus important de cette page. « Twahachtek » est bien " +
+          "plus chargé que « tu me manques » en français — c'est le mot des " +
+          "gens qu'on ne voit qu'une fois par an. Un enfant qui le dit à sa " +
+          "grand-mère au téléphone, c'est le moment que vous cherchez.",
+      },
+      {
+        fr: "Comment vas-tu, mamie ?",
+        latin: "Kif dayra, jeddati ?",
+        arabic: "كيف دايرة، جدتي؟",
+        kid: true,
+      },
+      {
+        fr: "Je t'embrasse",
+        latin: "Kanbousek",
+        arabic: "كنبوسك",
+        kid: true,
+        check: true,
+      },
+      {
+        fr: "On vient bientôt",
+        latin: "Ghadi njiw qriban, inchallah",
+        arabic: "غادي نجيو قريبا، إن شاء الله",
+        check: true,
+      },
+      {
+        fr: "Passe-moi mamie",
+        latin: "3tini jeddati, 3afak",
+        arabic: "عطيني جدتي، عافاك",
+        kid: true,
+        check: true,
+      },
+    ],
+  },
+
+  {
+    id: "occasions",
+    label: "Fêtes et grandes occasions",
+    emoji: "🎉",
+    audience: "adult",
+    free: false,
+    intro:
+      "Les moments où le silence se remarque le plus. Chaque occasion a sa " +
+      "formule, et il en existe une pour presque tout.",
+    lines: [
+      {
+        fr: "Joyeuse fête (Aïd)",
+        latin: "3id moubarak sa3id",
+        arabic: "عيد مبارك سعيد",
+        note: "La formule de l'Aïd, à dire à tout le monde, y compris aux voisins.",
+      },
+      {
+        fr: "Félicitations",
+        latin: "Mabrouk",
+        arabic: "مبروك",
+        note:
+          "S'emploie très largement : mariage, naissance, réussite, achat " +
+          "d'une voiture, nouvelle maison.",
+      },
+      {
+        fr: "Que Dieu te bénisse (réponse à « mabrouk »)",
+        latin: "Allah ybarek fik",
+        arabic: "الله يبارك فيك",
+        note:
+          "La réponse attendue quand on vous félicite. Ne pas répondre laisse " +
+          "un blanc gênant.",
+      },
+      {
+        fr: "À ta santé (vêtement neuf, coupe de cheveux, sortie de bain)",
+        latin: "Bsaha",
+        arabic: "بالصحة",
+        note:
+          "Surprenant pour un Français : on félicite quelqu'un qui sort du " +
+          "hammam, qui étrenne des habits ou qui vient de se faire couper les " +
+          "cheveux. Ne pas le dire passe pour de l'indifférence. Réponse : " +
+          "« Allah y3tik saha ».",
+      },
+      {
+        fr: "Que Dieu ait son âme (condoléances)",
+        latin: "Allah yrahmo",
+        arabic: "الله يرحمو",
+        check: true,
+        note:
+          "Pour une femme : « Allah yrahmha ». À dire simplement, sans " +
+          "chercher à en faire plus — la sobriété est de mise.",
+      },
+      {
+        fr: "Que Dieu vous donne la patience",
+        latin: "Allah y3tikoum sber",
+        arabic: "الله يعطيكم الصبر",
+        check: true,
+        note: "S'adresse à la famille endeuillée.",
+      },
+    ],
+  },
+
+  {
+    id: "sante",
+    label: "Chez le médecin ou à la pharmacie",
+    emoji: "🩺",
+    audience: "adult",
+    free: false,
+    intro:
+      "À préparer avant d'en avoir besoin. Le jour où ça arrive, on n'a pas " +
+      "le temps de chercher ses mots.",
+    lines: [
+      {
+        fr: "Mon fils a de la fièvre",
+        latin: "Weldi 3endo skhana",
+        arabic: "ولدي عندو سخانة",
+        check: true,
+        note: "Pour une fille : « bnti 3endha skhana ».",
+      },
+      {
+        fr: "Il a mal au ventre",
+        latin: "Kaydrou kerchou",
+        arabic: "كيضرو كرشو",
+        check: true,
+      },
+      {
+        fr: "Depuis hier",
+        latin: "Men lbareh",
+        arabic: "من البارح",
+      },
+      {
+        fr: "Il est allergique",
+        latin: "3endo hasasiya",
+        arabic: "عندو حساسية",
+        check: true,
+      },
+      {
+        fr: "Où est la pharmacie ?",
+        latin: "Fin l farmasyan ?",
+        arabic: "فين الفارماسيان؟",
+        check: true,
+        note: "Le mot est emprunté au français, il est compris partout.",
+      },
+      {
+        fr: "Il faut un médecin",
+        latin: "Khassna tbib",
+        arabic: "خاصنا طبيب",
+        check: true,
+      },
+    ],
+  },
+
+  {
     id: "prendre-conge",
     label: "Prendre congé",
     emoji: "👋",
