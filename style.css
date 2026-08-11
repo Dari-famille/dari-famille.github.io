@@ -472,6 +472,46 @@ body {
   line-height: 1.4;
   opacity: 0.85;
 }
+/* Progression par catégorie : deux segments empilés sur la même barre —
+   l'acquis en vert, l'en-cours en safran par-dessus. */
+.progress-box {
+  max-width: 460px;
+  margin: 0 auto 22px;
+  padding: 0 4px;
+}
+.progress-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+/* L'acquis est dessiné par-dessus l'en-cours : les deux largeurs partent de
+   la gauche, seul l'ordre d'empilement les distingue. */
+.progress-fill.learning {
+  background: var(--saffron);
+  z-index: 1;
+}
+.progress-fill.acquired {
+  background: var(--emerald);
+  z-index: 2;
+}
+.progress-label {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* L'origine familiale de l'app est ce qui la distingue des cours de darija
    génériques : elle est affichée, pas reléguée à une page « à propos ». */
 .origin {

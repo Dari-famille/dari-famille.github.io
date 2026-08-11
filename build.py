@@ -39,12 +39,18 @@ def main():
         sys.exit("Le lien vers style.css est introuvable dans index.html")
 
     # JS : chaque <script src="x.js"></script>  ->  <script>…</script>
-    for js_name in ("data.js", "app.js"):
+    # On les découvre dans index.html plutôt que de les lister ici, pour qu'un
+    # nouveau fichier soit inliné sans qu'on ait à penser à modifier ce script.
+    scripts = re.findall(r'<script src="([^"]+\.js)"></script>', html)
+    if not scripts:
+        sys.exit("Aucune balise <script src=…> trouvée dans index.html")
+    for js_name in scripts:
         js = read(js_name)
         pattern = r'\s*<script src="%s"></script>' % re.escape(js_name)
         html, n = re.subn(pattern, "\n  <script>\n" + js + "</script>", html, count=1)
         if n != 1:
             sys.exit(f"La balise script de {js_name} est introuvable dans index.html")
+    print("  scripts inlinés :", ", ".join(scripts))
 
     # Le service worker et le manifeste exigent HTTPS : inutiles ici, et le
     # navigateur journaliserait une erreur à chaque ouverture en file://.

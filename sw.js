@@ -4,13 +4,14 @@
 //
 // IMPORTANT : incrémenter CACHE_VERSION à chaque modification de data.js,
 // app.js ou style.css, sinon les visiteurs gardent l'ancienne version.
-const CACHE_VERSION = "dari-v2";
+const CACHE_VERSION = "dari-v3";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
   "./data.js",
+  "./srs.js",
   "./app.js",
   "./manifest.json",
   "./icons/icon-192.png",
@@ -26,10 +27,16 @@ self.addEventListener("install", (event) => {
       .open(CACHE_VERSION)
       // addAll est tout-ou-rien : une seule 404 ferait échouer l'installation.
       // On tolère les manquants pour ne pas casser l'app entière.
+      //
+      // `cache: "reload"` force le passage par le réseau : sans lui, le cache
+      // HTTP du navigateur peut renvoyer l'ancien fichier, et la nouvelle
+      // version du service worker réinstallerait le contenu périmé.
       .then((cache) =>
         Promise.all(
           APP_SHELL.map((url) =>
-            cache.add(url).catch(() => console.warn("SW: non mis en cache", url))
+            cache
+              .add(new Request(url, { cache: "reload" }))
+              .catch(() => console.warn("SW: non mis en cache", url))
           )
         )
       )

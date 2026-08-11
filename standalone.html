@@ -487,6 +487,46 @@ body {
   line-height: 1.4;
   opacity: 0.85;
 }
+/* Progression par catégorie : deux segments empilés sur la même barre —
+   l'acquis en vert, l'en-cours en safran par-dessus. */
+.progress-box {
+  max-width: 460px;
+  margin: 0 auto 22px;
+  padding: 0 4px;
+}
+.progress-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+/* L'acquis est dessiné par-dessus l'en-cours : les deux largeurs partent de
+   la gauche, seul l'ordre d'empilement les distingue. */
+.progress-fill.learning {
+  background: var(--saffron);
+  z-index: 1;
+}
+.progress-fill.acquired {
+  background: var(--emerald);
+  z-index: 2;
+}
+.progress-label {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* L'origine familiale de l'app est ce qui la distingue des cours de darija
    génériques : elle est affichée, pas reléguée à une page « à propos ». */
 .origin {
@@ -1013,6 +1053,200 @@ function getSentenceObjects(tag) {
 }
 </script>
   <script>
+// Révision espacée (système de Leitner).
+//
+// Sans ce module, le quiz tire au hasard : on repose sans cesse les mots déjà
+// acquis et on laisse filer ceux qu'on rate. Ici chaque mot avance dans des
+// « boîtes » : bonne réponse, il monte d'une boîte et revient plus tard ;
+// mauvaise réponse, il redescend et revient vite.
+
+const SRS = (() => {
+  const STORE_KEY = "dari-srs-v1";
+  const STREAK_KEY = "dari-streak-v1";
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // Délai avant réapparition, par boîte. La boîte 0 est le mot jamais vu.
+  // La dernière boîte vaut « acquis » : on le revoit rarement, sans l'oublier.
+  const INTERVALS = [0, 1 * DAY, 3 * DAY, 7 * DAY, 16 * DAY, 35 * DAY, 90 * DAY];
+  const MAX_BOX = INTERVALS.length - 1;
+  const ACQUIRED_BOX = 4; // seuil à partir duquel on considère le mot su
+
+  // ---- Identité d'un mot -------------------------------------------------
+  // Les entrées de data.js n'ont pas d'identifiant. On en dérive un du contenu
+  // plutôt que de la position, pour que réordonner ou insérer du vocabulaire
+  // ne remette pas la progression à zéro. Corriger une entrée la réinitialise :
+  // c'est le compromis accepté, et c'est même souhaitable si le sens change.
+  function itemKey(item) {
+    const raw = `${item.fr}|${item.latin}`;
+    let h = 5381;
+    for (let i = 0; i < raw.length; i++) {
+      h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+    }
+    return "w" + (h >>> 0).toString(36);
+  }
+
+  // ---- Persistance -------------------------------------------------------
+  let store = load();
+
+  function load() {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+    } catch (e) {
+      // Stockage corrompu ou désactivé : on repart d'une progression vide
+      // plutôt que d'empêcher l'app de démarrer.
+      return {};
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    } catch (e) {
+      /* quota dépassé ou navigation privée : la session reste utilisable */
+    }
+  }
+
+  function record(item) {
+    const key = itemKey(item);
+    if (!store[key]) {
+      store[key] = { box: 0, due: 0, seen: 0, correct: 0, lapses: 0 };
+    }
+    return store[key];
+  }
+
+  // ---- Enregistrement d'une réponse --------------------------------------
+  function review(item, isCorrect) {
+    const rec = record(item);
+    rec.seen++;
+    if (isCorrect) {
+      rec.correct++;
+      rec.box = Math.min(rec.box + 1, MAX_BOX);
+    } else {
+      rec.lapses++;
+      // On redescend en boîte 1, pas en 0 : le mot revient vite sans effacer
+      // le fait qu'il a déjà été rencontré.
+      rec.box = rec.box > 1 ? 1 : rec.box;
+      if (rec.box === 0) rec.box = 1;
+    }
+    rec.due = Date.now() + INTERVALS[rec.box];
+    save();
+    touchStreak();
+    return rec;
+  }
+
+  // ---- Choix du prochain mot ---------------------------------------------
+  // Priorité : ce qui est dû, puis ce qui n'a jamais été vu, puis le reste
+  // (le plus anciennement échéancé d'abord). Un peu d'aléatoire à l'intérieur
+  // de chaque groupe évite de reposer les mots toujours dans le même ordre.
+  function pick(items) {
+    if (!items || items.length === 0) return null;
+    const now = Date.now();
+    const due = [];
+    const fresh = [];
+    const rest = [];
+
+    items.forEach((item) => {
+      const rec = store[itemKey(item)];
+      if (!rec) fresh.push(item);
+      else if (rec.due <= now) due.push(item);
+      else rest.push(item);
+    });
+
+    if (due.length) return sample(due);
+    if (fresh.length) return sample(fresh);
+    rest.sort((a, b) => (store[itemKey(a)].due || 0) - (store[itemKey(b)].due || 0));
+    // Parmi les non-dus, on pioche dans le tiers le plus proche de l'échéance.
+    const window = rest.slice(0, Math.max(1, Math.ceil(rest.length / 3)));
+    return sample(window);
+  }
+
+  function sample(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // ---- Statistiques pour l'affichage de progression ----------------------
+  function stats(items) {
+    const now = Date.now();
+    let acquired = 0;
+    let learning = 0;
+    let dueNow = 0;
+    items.forEach((item) => {
+      const rec = store[itemKey(item)];
+      if (!rec) return;
+      if (rec.box >= ACQUIRED_BOX) acquired++;
+      else if (rec.box > 0) learning++;
+      if (rec.due <= now) dueNow++;
+    });
+    return {
+      total: items.length,
+      acquired,
+      learning,
+      untouched: items.length - acquired - learning,
+      due: dueNow,
+    };
+  }
+
+  function boxOf(item) {
+    const rec = store[itemKey(item)];
+    return rec ? rec.box : 0;
+  }
+
+  // ---- Série de jours consécutifs ----------------------------------------
+  // Un compteur de jours d'affilée : la régularité est ce qui fait apprendre
+  // une langue, plus que la durée d'une session.
+  function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }
+
+  function loadStreak() {
+    try {
+      return JSON.parse(localStorage.getItem(STREAK_KEY)) || { days: 0, last: null };
+    } catch (e) {
+      return { days: 0, last: null };
+    }
+  }
+
+  function touchStreak() {
+    const s = loadStreak();
+    const t = today();
+    if (s.last === t) return s;
+    const yesterday = new Date(Date.now() - DAY);
+    const yKey = `${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`;
+    s.days = s.last === yKey ? s.days + 1 : 1;
+    s.last = t;
+    try {
+      localStorage.setItem(STREAK_KEY, JSON.stringify(s));
+    } catch (e) {
+      /* ignoré : la série est un bonus, pas une fonction critique */
+    }
+    return s;
+  }
+
+  function streak() {
+    const s = loadStreak();
+    // Une série interrompue depuis plus d'un jour est retombée à zéro.
+    if (!s.last) return 0;
+    const t = today();
+    const yesterday = new Date(Date.now() - DAY);
+    const yKey = `${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`;
+    return s.last === t || s.last === yKey ? s.days : 0;
+  }
+
+  function reset() {
+    store = {};
+    save();
+    try {
+      localStorage.removeItem(STREAK_KEY);
+    } catch (e) {
+      /* rien à faire */
+    }
+  }
+
+  return { itemKey, review, pick, stats, boxOf, streak, reset, ACQUIRED_BOX };
+})();
+</script>
+  <script>
 // État de l'application
 const state = {
   mode: "kid", // "kid" | "adult"
@@ -1147,6 +1381,8 @@ function renderContent() {
   toggle.appendChild(builderBtn);
   content.appendChild(toggle);
 
+  renderProgress(content);
+
   if (state.section === "quiz") {
     renderQuiz(content);
   } else if (state.section === "memory") {
@@ -1158,6 +1394,50 @@ function renderContent() {
   } else {
     renderAdultList(content);
   }
+}
+
+// Barre de progression de la catégorie courante. Elle répond à la question
+// « où j'en suis ? », que le score cumulé ne disait pas : un score de 40/60 ne
+// dit pas quels mots sont acquis ni ce qu'il reste à revoir aujourd'hui.
+function renderProgress(content) {
+  if (typeof SRS === "undefined") return;
+  const cat = getCategory();
+  const s = SRS.stats(cat.items);
+  const streak = SRS.streak();
+  const pctAcquired = s.total ? (s.acquired / s.total) * 100 : 0;
+  // Les deux segments partent du bord gauche et se superposent : l'en-cours
+  // est tracé jusqu'au cumul des deux, l'acquis vient le recouvrir à gauche.
+  // Seule la portion entre les deux largeurs reste visible en safran.
+  const pctLearning = pctAcquired + (s.total ? (s.learning / s.total) * 100 : 0);
+
+  const box = document.createElement("div");
+  box.className = "progress-box";
+
+  const bar = document.createElement("div");
+  bar.className = "progress-bar";
+  bar.innerHTML = `
+    <span class="progress-fill learning" style="width:${pctLearning}%"></span>
+    <span class="progress-fill acquired" style="width:${pctAcquired}%"></span>
+  `;
+  box.appendChild(bar);
+
+  const line = document.createElement("p");
+  line.className = "progress-label";
+  const kid = state.mode === "kid";
+  const parts = [];
+  if (kid) {
+    parts.push(`⭐ ${s.acquired} mot${s.acquired > 1 ? "s" : ""} appris`);
+    if (s.due > 0) parts.push(`${s.due} à revoir`);
+  } else {
+    parts.push(`${s.acquired} / ${s.total} acquis`);
+    if (s.learning > 0) parts.push(`${s.learning} en cours`);
+    parts.push(s.due > 0 ? `${s.due} à réviser` : "rien à réviser");
+  }
+  if (streak > 0) parts.push(`🔥 ${streak} jour${streak > 1 ? "s" : ""}`);
+  line.textContent = parts.join(" · ");
+  box.appendChild(line);
+
+  content.appendChild(box);
 }
 
 function makeToggleBtn(label, active, onClick) {
@@ -1218,7 +1498,11 @@ function renderAdultList(content) {
 function pickNewQuestion() {
   const cat = getCategory();
   const items = cat.items;
-  const correct = items[Math.floor(Math.random() * items.length)];
+  // La révision espacée choisit le mot : ce qui est dû d'abord, puis ce qui
+  // n'a jamais été vu. Repli sur un tirage au hasard si le module manque.
+  const correct =
+    (typeof SRS !== "undefined" && SRS.pick(items)) ||
+    items[Math.floor(Math.random() * items.length)];
 
   // options fausses : d'abord depuis la même catégorie, sinon toutes catégories du mode courant
   let pool = items.filter((i) => i !== correct);
@@ -1295,6 +1579,7 @@ function renderKidQuizBody(box) {
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
       saveScore();
+      if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       document.querySelectorAll(".kid-quiz-tile").forEach((b2, i) => {
         const optData = state.quiz.options[i];
         if (optData === q) {
@@ -1377,6 +1662,7 @@ function renderAdultQuizBody(box) {
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
       saveScore();
+      if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       if (dir === "fr2ma") speak(q.arabic);
       document.querySelectorAll(".quiz-option").forEach((b2, i) => {
         const optData = state.quiz.options[i];

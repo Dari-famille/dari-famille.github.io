@@ -132,6 +132,8 @@ function renderContent() {
   toggle.appendChild(builderBtn);
   content.appendChild(toggle);
 
+  renderProgress(content);
+
   if (state.section === "quiz") {
     renderQuiz(content);
   } else if (state.section === "memory") {
@@ -143,6 +145,50 @@ function renderContent() {
   } else {
     renderAdultList(content);
   }
+}
+
+// Barre de progression de la catégorie courante. Elle répond à la question
+// « où j'en suis ? », que le score cumulé ne disait pas : un score de 40/60 ne
+// dit pas quels mots sont acquis ni ce qu'il reste à revoir aujourd'hui.
+function renderProgress(content) {
+  if (typeof SRS === "undefined") return;
+  const cat = getCategory();
+  const s = SRS.stats(cat.items);
+  const streak = SRS.streak();
+  const pctAcquired = s.total ? (s.acquired / s.total) * 100 : 0;
+  // Les deux segments partent du bord gauche et se superposent : l'en-cours
+  // est tracé jusqu'au cumul des deux, l'acquis vient le recouvrir à gauche.
+  // Seule la portion entre les deux largeurs reste visible en safran.
+  const pctLearning = pctAcquired + (s.total ? (s.learning / s.total) * 100 : 0);
+
+  const box = document.createElement("div");
+  box.className = "progress-box";
+
+  const bar = document.createElement("div");
+  bar.className = "progress-bar";
+  bar.innerHTML = `
+    <span class="progress-fill learning" style="width:${pctLearning}%"></span>
+    <span class="progress-fill acquired" style="width:${pctAcquired}%"></span>
+  `;
+  box.appendChild(bar);
+
+  const line = document.createElement("p");
+  line.className = "progress-label";
+  const kid = state.mode === "kid";
+  const parts = [];
+  if (kid) {
+    parts.push(`⭐ ${s.acquired} mot${s.acquired > 1 ? "s" : ""} appris`);
+    if (s.due > 0) parts.push(`${s.due} à revoir`);
+  } else {
+    parts.push(`${s.acquired} / ${s.total} acquis`);
+    if (s.learning > 0) parts.push(`${s.learning} en cours`);
+    parts.push(s.due > 0 ? `${s.due} à réviser` : "rien à réviser");
+  }
+  if (streak > 0) parts.push(`🔥 ${streak} jour${streak > 1 ? "s" : ""}`);
+  line.textContent = parts.join(" · ");
+  box.appendChild(line);
+
+  content.appendChild(box);
 }
 
 function makeToggleBtn(label, active, onClick) {
@@ -203,7 +249,11 @@ function renderAdultList(content) {
 function pickNewQuestion() {
   const cat = getCategory();
   const items = cat.items;
-  const correct = items[Math.floor(Math.random() * items.length)];
+  // La révision espacée choisit le mot : ce qui est dû d'abord, puis ce qui
+  // n'a jamais été vu. Repli sur un tirage au hasard si le module manque.
+  const correct =
+    (typeof SRS !== "undefined" && SRS.pick(items)) ||
+    items[Math.floor(Math.random() * items.length)];
 
   // options fausses : d'abord depuis la même catégorie, sinon toutes catégories du mode courant
   let pool = items.filter((i) => i !== correct);
@@ -280,6 +330,7 @@ function renderKidQuizBody(box) {
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
       saveScore();
+      if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       document.querySelectorAll(".kid-quiz-tile").forEach((b2, i) => {
         const optData = state.quiz.options[i];
         if (optData === q) {
@@ -362,6 +413,7 @@ function renderAdultQuizBody(box) {
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
       saveScore();
+      if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       if (dir === "fr2ma") speak(q.arabic);
       document.querySelectorAll(".quiz-option").forEach((b2, i) => {
         const optData = state.quiz.options[i];
