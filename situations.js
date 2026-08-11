@@ -179,7 +179,6 @@ const SITUATIONS = [
         latin: "Fiya jou3",
         arabic: "فيا الجوع",
         kid: true,
-        check: true,
         note: "On entend aussi « jou3an » (garçon) / « jou3ana » (fille).",
       },
       {
@@ -319,14 +318,12 @@ const SITUATIONS = [
         latin: "Gles !",
         arabic: "كلس",
         kid: true,
-        check: true,
       },
       {
         fr: "Lève-toi",
         latin: "Noud !",
         arabic: "نوض",
         kid: true,
-        check: true,
       },
       {
         fr: "Regarde !",
@@ -375,14 +372,12 @@ const SITUATIONS = [
         latin: "Chba3ti ?",
         arabic: "شبعتي؟",
         kid: true,
-        check: true,
       },
       {
         fr: "Comment tu t'appelles ?",
         latin: "Chnou smitek ?",
         arabic: "شنو سميتك؟",
         kid: true,
-        check: true,
       },
       {
         fr: "D'accord ?",
@@ -670,7 +665,6 @@ const SITUATIONS = [
         fr: "Que Dieu ait son âme (condoléances)",
         latin: "Allah yrahmo",
         arabic: "الله يرحمو",
-        check: true,
         note:
           "Pour une femme : « Allah yrahmha ». À dire simplement, sans " +
           "chercher à en faire plus — la sobriété est de mise.",
@@ -679,7 +673,6 @@ const SITUATIONS = [
         fr: "Que Dieu vous donne la patience",
         latin: "Allah y3tikoum sber",
         arabic: "الله يعطيكم الصبر",
-        check: true,
         note: "S'adresse à la famille endeuillée.",
       },
     ],
@@ -723,14 +716,12 @@ const SITUATIONS = [
         fr: "Où est la pharmacie ?",
         latin: "Fin l farmasyan ?",
         arabic: "فين الفارماسيان؟",
-        check: true,
         note: "Le mot est emprunté au français, il est compris partout.",
       },
       {
         fr: "Il faut un médecin",
         latin: "Khassna tbib",
         arabic: "خاصنا طبيب",
-        check: true,
       },
     ],
   },
