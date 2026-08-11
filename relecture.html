@@ -792,16 +792,16 @@ const SITUATIONS = [
     lines: [
       {
         fr: "Mon fils a de la fièvre",
-        latin: "Weldi 3endo skhana",
-        arabic: "ولدي عندو سخانة",
-        check: true,
-        note: "Pour une fille : « bnti 3endha skhana ».",
+        latin: "Weldi fih skhana",
+        arabic: "ولدي فيه سخانة",
+        note:
+          "Pour une fille : « bnti fiha skhana ». On dit « fih » (il y a en " +
+          "lui) plutôt que « 3endo » (il a), comme pour la faim et la soif.",
       },
       {
         fr: "Il a mal au ventre",
-        latin: "Kaydrou kerchou",
-        arabic: "كيضرو كرشو",
-        check: true,
+        latin: "Kadrou kerchou",
+        arabic: "كضرو كرشو",
       },
       {
         fr: "Depuis hier",
@@ -954,18 +954,32 @@ function linesToCheck() {
   const list = document.getElementById("list");
   let lastSituation = null;
 
+  // La progression était indexée par position dans la liste. Or la liste
+  // raccourcit à chaque correction appliquée : au tour suivant, les réponses
+  // enregistrées se retrouvaient rattachées aux mauvaises expressions. On la
+  // rattache donc au contenu de la phrase, qui ne bouge pas.
+  function keyOf(item) {
+    const raw = item.fr + "|" + item.latin;
+    let h = 5381;
+    for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+    return "k" + (h >>> 0).toString(36);
+  }
+
   // Déclarés avant la boucle : paint() appelle refresh() dès la première
   // fiche, et des const déclarés plus bas seraient encore inaccessibles.
   const countEl = document.getElementById("count");
   const copyBtn = document.getElementById("copy");
 
   function refresh() {
-    const done = Object.keys(answers).length;
+    // On ne compte que les réponses portant sur des phrases encore
+    // présentes : d'anciennes clés survivent aux corrections appliquées.
+    const done = items.filter((it) => answers[keyOf(it)]).length;
     countEl.textContent = done + " / " + items.length + " relues";
     copyBtn.disabled = done === 0;
   }
 
-  items.forEach((item, i) => {
+  items.forEach((item) => {
+    const key = keyOf(item);
     if (item.situation !== lastSituation) {
       const h = document.createElement("h2");
       h.textContent = item.situation;
@@ -995,7 +1009,7 @@ function linesToCheck() {
     fix.placeholder = "La bonne façon de le dire…";
 
     function paint() {
-      const a = answers[i];
+      const a = answers[key];
       // Le second argument de toggle() doit être un vrai booléen : passer
       // undefined le fait basculer au lieu de forcer l'état.
       okBtn.classList.toggle("on", !!a && a.v === "ok");
@@ -1006,13 +1020,13 @@ function linesToCheck() {
       refresh();
     }
 
-    okBtn.onclick = () => { answers[i] = { v: "ok" }; save(); paint(); };
+    okBtn.onclick = () => { answers[key] = { v: "ok" }; save(); paint(); };
     koBtn.onclick = () => {
-      answers[i] = { v: "ko", fix: (answers[i] && answers[i].fix) || "" };
+      answers[key] = { v: "ko", fix: (answers[key] && answers[key].fix) || "" };
       save(); paint(); fix.focus();
     };
     fix.oninput = () => {
-      answers[i] = { v: "ko", fix: fix.value };
+      answers[key] = { v: "ko", fix: fix.value };
       save(); refresh();
     };
 
@@ -1022,7 +1036,7 @@ function linesToCheck() {
   });
 
   copyBtn.onclick = () => {
-    const answered = items.map((item, i) => ({ item, a: answers[i] })).filter((x) => x.a);
+    const answered = items.map((item) => ({ item, a: answers[keyOf(item)] })).filter((x) => x.a);
     const fixes = answered.filter((x) => x.a.v === "ko");
     // Les expressions validées doivent remonter elles aussi : sans leur liste,
     // impossible de savoir lesquelles sont acquises, et la relectrice devrait

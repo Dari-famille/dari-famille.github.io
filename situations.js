@@ -693,16 +693,16 @@ const SITUATIONS = [
     lines: [
       {
         fr: "Mon fils a de la fièvre",
-        latin: "Weldi 3endo skhana",
-        arabic: "ولدي عندو سخانة",
-        check: true,
-        note: "Pour une fille : « bnti 3endha skhana ».",
+        latin: "Weldi fih skhana",
+        arabic: "ولدي فيه سخانة",
+        note:
+          "Pour une fille : « bnti fiha skhana ». On dit « fih » (il y a en " +
+          "lui) plutôt que « 3endo » (il a), comme pour la faim et la soif.",
       },
       {
         fr: "Il a mal au ventre",
-        latin: "Kaydrou kerchou",
-        arabic: "كيضرو كرشو",
-        check: true,
+        latin: "Kadrou kerchou",
+        arabic: "كضرو كرشو",
       },
       {
         fr: "Depuis hier",
