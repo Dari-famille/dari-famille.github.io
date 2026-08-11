@@ -158,8 +158,9 @@ const SITUATIONS = [
         fr: "Ça suffit, merci",
         latin: "Baraka 3liya, choukran",
         arabic: "بركا عليا، شكرا",
-        check: true,
-        note: "Formulation à faire confirmer.",
+        note:
+          "Plus ferme que « chwiya safi » : à garder pour le troisième " +
+          "refus, quand on vous ressert malgré tout.",
       },
     ],
   },
@@ -295,7 +296,6 @@ const SITUATIONS = [
         fr: "Viens !",
         latin: "Aji !",
         arabic: "أجي",
-        check: true,
         kid: true,
         note:
           "Le mot numéro un. Une grand-mère qui appelle un enfant dit « aji », " +
@@ -455,7 +455,6 @@ const SITUATIONS = [
         fr: "Petit à petit",
         latin: "Chwiya b chwiya",
         arabic: "شوية بشوية",
-        check: true,
         note:
           "Ce qu'on vous répondra quand vous vous excuserez de mal parler. " +
           "C'est un encouragement, pas une critique.",
