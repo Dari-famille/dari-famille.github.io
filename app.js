@@ -13,6 +13,7 @@ const state = {
     verbId: null,
     object: null,
   },
+  situationId: null, // situation ouverte, null = liste des situations
   memory: {
     cards: [],
     flipped: [],
@@ -69,7 +70,12 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
       .querySelectorAll(".mode-btn")
       .forEach((b) => b.classList.toggle("active", b === btn));
     const cats = currentCategories();
-    if (!cats.find((c) => c.id === state.categoryId)) {
+    // On reste dans les situations en changeant de mode : elles existent dans
+    // les deux, avec un contenu différent. Sortir de force serait déroutant.
+    if (state.categoryId === SITUATIONS_ID) {
+      state.situationId = null;
+      if (currentSituations().length === 0) state.categoryId = cats[0].id;
+    } else if (!cats.find((c) => c.id === state.categoryId)) {
       state.categoryId = cats[0].id;
     }
     state.section = state.mode === "kid" ? "cards" : "list";
@@ -78,9 +84,39 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
   });
 });
 
+// Les situations ne sont pas une catégorie de vocabulaire : elles occupent
+// un identifiant réservé dans la même barre de navigation, parce que c'est
+// bien le même choix pour l'utilisateur — « qu'est-ce que je travaille ? ».
+const SITUATIONS_ID = "__situations__";
+
+function currentSituations() {
+  if (typeof SITUATIONS === "undefined") return [];
+  return SITUATIONS.filter((s) =>
+    state.mode === "kid"
+      ? s.audience === "kid" || s.audience === "both"
+      : s.audience === "adult" || s.audience === "both"
+  );
+}
+
 function renderCategoryNav() {
   const nav = document.getElementById("category-nav");
   nav.innerHTML = "";
+
+  if (currentSituations().length > 0) {
+    const sitBtn = document.createElement("button");
+    sitBtn.className =
+      "category-btn situations-btn" +
+      (state.categoryId === SITUATIONS_ID ? " active" : "");
+    sitBtn.textContent = "💬 Situations";
+    sitBtn.addEventListener("click", () => {
+      state.categoryId = SITUATIONS_ID;
+      state.situationId = null;
+      renderCategoryNav();
+      renderContent();
+    });
+    nav.appendChild(sitBtn);
+  }
+
   currentCategories().forEach((cat) => {
     const btn = document.createElement("button");
     btn.className =
@@ -103,6 +139,13 @@ function renderContent() {
 
   document.getElementById("category-nav").style.display =
     state.section === "builder" ? "none" : "";
+
+  // Les situations ont leur propre mise en page : ni cartes, ni quiz, ni
+  // barre de progression — on sort avant de construire tout ça.
+  if (state.categoryId === SITUATIONS_ID) {
+    renderSituations(content);
+    return;
+  }
 
   const toggle = document.createElement("div");
   toggle.className = "section-toggle";
@@ -435,6 +478,85 @@ function renderAdultQuizBody(box) {
     renderContent();
   });
   box.appendChild(nextBtn);
+}
+
+// ---- Situations ----
+// Deux écrans : la liste des scènes, puis le détail d'une scène. Le détail se
+// lit comme une antisèche qu'on ouvre juste avant d'entrer dans la pièce.
+function renderSituations(content) {
+  const sits = currentSituations();
+  const current = sits.find((s) => s.id === state.situationId);
+
+  if (!current) {
+    const intro = document.createElement("p");
+    intro.className = "note";
+    intro.style.marginTop = "0";
+    intro.textContent =
+      state.mode === "kid"
+        ? "Choisis un moment : les phrases pour t'en sortir tout seul."
+        : "Les phrases et les usages qui comptent dans un moment précis.";
+    content.appendChild(intro);
+
+    const grid = document.createElement("div");
+    grid.className = "situation-grid";
+    sits.forEach((sit) => {
+      const card = document.createElement("button");
+      card.className = "situation-card";
+      card.innerHTML = `
+        <span class="situation-emoji">${sit.emoji}</span>
+        <span class="situation-label">${sit.label}</span>
+        <span class="situation-count">${sit.lines.length} phrases</span>
+      `;
+      card.addEventListener("click", () => {
+        state.situationId = sit.id;
+        renderContent();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      grid.appendChild(card);
+    });
+    content.appendChild(grid);
+    return;
+  }
+
+  const back = document.createElement("button");
+  back.className = "situation-back";
+  back.textContent = "← Toutes les situations";
+  back.addEventListener("click", () => {
+    state.situationId = null;
+    renderContent();
+  });
+  content.appendChild(back);
+
+  const head = document.createElement("div");
+  head.className = "situation-head";
+  head.innerHTML = `
+    <h2>${current.emoji} ${current.label}</h2>
+    ${current.intro ? `<p>${current.intro}</p>` : ""}
+  `;
+  content.appendChild(head);
+
+  const list = document.createElement("div");
+  list.className = "situation-lines";
+  current.lines.forEach((line) => {
+    // En mode enfant on ne montre que les phrases qu'un enfant peut dire.
+    if (state.mode === "kid" && !line.kid) return;
+
+    const card = document.createElement("div");
+    card.className = "line-card";
+    card.innerHTML = `
+      <div class="line-fr">${line.fr}</div>
+      <div class="line-latin">${line.latin}</div>
+      <div class="line-arabic arabic">${line.arabic}</div>
+      ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
+    `;
+    const btn = document.createElement("button");
+    btn.className = "speak-btn";
+    btn.textContent = "🔊 Écouter";
+    btn.addEventListener("click", () => speak(line.arabic));
+    card.insertBefore(btn, card.querySelector(".line-note"));
+    list.appendChild(card);
+  });
+  content.appendChild(list);
 }
 
 // ---- Jeu de mémoire (paires) ----
