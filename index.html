@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Apprendre la Darija</title>
+  <meta name="description" content="Apprendre l'arabe marocain en famille : vocabulaire, quiz et jeux, pour les enfants comme pour les adultes. Fonctionne hors-ligne." />
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#33509e" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#161c27" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Darija" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🌙 Apprendre la Darija</h1>
+    <div class="mode-toggle">
+      <button id="mode-kid" class="mode-btn active" data-mode="kid">🧒 Enfant</button>
+      <button id="mode-adult" class="mode-btn" data-mode="adult">🧑 Adulte</button>
+    </div>
+  </header>
+
+  <nav id="category-nav" class="category-nav"></nav>
+
+  <main id="content" class="content"></main>
+
+  <footer class="app-footer">
+    <p>Score : <span id="score">0</span> / <span id="score-total">0</span></p>
+    <p class="audio-disclaimer">🔊 Le bouton « Écouter » utilise la voix arabe du navigateur : prononciation approximative, ce n'est pas un accent marocain authentique. Pour le vrai accent, rien ne remplace une oreille marocaine !</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Le service worker rend l'app installable et utilisable sans connexion.
+    // Il exige HTTPS (ou localhost) : en ouvrant le fichier via file://
+    // l'enregistrement échoue, sans conséquence pour le reste de l'app.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("sw.js")
+          .catch((err) => console.warn("Service worker non enregistré :", err));
+      });
+    }
+  </script>
+</body>
+</html>

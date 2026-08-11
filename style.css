@@ -1,0 +1,471 @@
+/* Palette inspirée des zelliges marocains : bleu Majorelle, vert menthe,
+   terracotta en accent secondaire — pensée en tokens pour les deux thèmes. */
+:root {
+  --bg: #f8f0dd;
+  --surface: #ffffff;
+  --surface-2: #fbf5e6;
+  --ink: #2a2013;
+  --muted: #7a6d55;
+  --majorelle: #33509e;
+  --majorelle-ink: #ffffff;
+  --emerald: #1f7a5c;
+  --terracotta: #b6502e;
+  --saffron: #d99a2b;
+  --correct-bg: #e0f3e6;
+  --correct-border: #1f7a5c;
+  --wrong-bg: #fbe4de;
+  --wrong-border: #b6502e;
+  --shadow: 0 2px 10px rgba(42, 32, 19, 0.1);
+  --radius: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161c27;
+    --surface: #202838;
+    --surface-2: #1b2230;
+    --ink: #eee2c8;
+    --muted: #9aa1b5;
+    --majorelle: #8fa8ec;
+    --majorelle-ink: #14192a;
+    --emerald: #57c99b;
+    --terracotta: #e88c62;
+    --saffron: #f0c369;
+    --correct-bg: #163527;
+    --correct-border: #57c99b;
+    --wrong-bg: #3a2020;
+    --wrong-border: #e88c62;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #161c27;
+  --surface: #202838;
+  --surface-2: #1b2230;
+  --ink: #eee2c8;
+  --muted: #9aa1b5;
+  --majorelle: #8fa8ec;
+  --majorelle-ink: #14192a;
+  --emerald: #57c99b;
+  --terracotta: #e88c62;
+  --saffron: #f0c369;
+  --correct-bg: #163527;
+  --correct-border: #57c99b;
+  --wrong-bg: #3a2020;
+  --wrong-border: #e88c62;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] {
+  --bg: #f8f0dd;
+  --surface: #ffffff;
+  --surface-2: #fbf5e6;
+  --ink: #2a2013;
+  --muted: #7a6d55;
+  --majorelle: #33509e;
+  --majorelle-ink: #ffffff;
+  --emerald: #1f7a5c;
+  --terracotta: #b6502e;
+  --saffron: #d99a2b;
+  --correct-bg: #e0f3e6;
+  --correct-border: #1f7a5c;
+  --wrong-bg: #fbe4de;
+  --wrong-border: #b6502e;
+  --shadow: 0 2px 10px rgba(42, 32, 19, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", -apple-system, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 16px 10px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--majorelle);
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-btn {
+  border: 2px solid var(--majorelle);
+  background: var(--surface);
+  color: var(--majorelle);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.mode-btn:hover {
+  transform: translateY(-1px);
+}
+
+.mode-btn:focus-visible,
+.category-btn:focus-visible,
+.speak-btn:focus-visible,
+.quiz-option:focus-visible,
+.quiz-next:focus-visible,
+.section-toggle button:focus-visible,
+.kid-card:focus-visible,
+.kid-quiz-tile:focus-visible {
+  outline: 3px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+.mode-btn.active {
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+}
+
+.category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+.category-btn {
+  border: none;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.1s ease;
+}
+
+.category-btn:hover {
+  transform: translateY(-2px);
+}
+
+.category-btn.active {
+  background: var(--saffron);
+  color: #2a2013;
+  font-weight: bold;
+}
+
+.content {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  width: 100%;
+}
+
+/* ---- Cards (adult mode / vocab list) ---- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.vocab-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vocab-card .fr {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.vocab-card .latin {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.vocab-card .arabic {
+  font-size: 1.4rem;
+  direction: rtl;
+}
+
+.speak-btn {
+  align-self: flex-start;
+  border: none;
+  background: var(--terracotta);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.speak-btn:active {
+  transform: scale(0.96);
+}
+
+/* ---- Kid mode: big flashcards ---- */
+.kid-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.kid-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 10px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.kid-card:hover {
+  transform: scale(1.04);
+}
+
+.kid-card .kid-emoji {
+  font-size: 3rem;
+}
+
+.kid-card .kid-latin {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-top: 8px;
+  color: var(--terracotta);
+}
+
+.kid-card .kid-fr {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ---- Quiz & générateur de phrases ---- */
+.quiz-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.quiz-prompt {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+}
+
+.quiz-prompt .quiz-emoji {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 10px;
+}
+
+.quiz-option {
+  border: 2px solid var(--majorelle);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.quiz-option.correct {
+  background: var(--correct-bg);
+  border-color: var(--correct-border);
+}
+
+.quiz-option.wrong {
+  background: var(--wrong-bg);
+  border-color: var(--wrong-border);
+}
+
+/* ---- Quiz enfant : images uniquement, pas de lecture requise ---- */
+.kid-quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.kid-quiz-tile {
+  position: relative;
+  background: var(--surface-2);
+  border: 3px solid var(--majorelle);
+  border-radius: var(--radius);
+  padding: 18px 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.kid-quiz-tile:hover {
+  transform: scale(1.05);
+}
+
+.kid-quiz-emoji {
+  font-size: 3.2rem;
+  display: block;
+}
+
+.kid-quiz-tile.correct {
+  background: var(--correct-bg);
+  border-color: var(--correct-border);
+}
+
+.kid-quiz-tile.wrong {
+  background: var(--wrong-bg);
+  border-color: var(--wrong-border);
+}
+
+.kid-quiz-mark {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 1.6rem;
+}
+
+/* ---- Jeu de mémoire ---- */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.memory-tile {
+  aspect-ratio: 1;
+  background: var(--surface-2);
+  border: 2px solid var(--majorelle);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: transform 0.15s ease;
+}
+
+.memory-tile:hover {
+  transform: scale(1.04);
+}
+
+.memory-tile.matched {
+  background: var(--correct-bg);
+  border-color: var(--correct-border);
+  cursor: default;
+}
+
+.memory-tile:disabled {
+  opacity: 0.85;
+}
+
+.memory-back {
+  font-size: 1.6rem;
+  opacity: 0.5;
+}
+
+.memory-emoji {
+  font-size: 2.2rem;
+}
+
+.memory-text {
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  word-break: break-word;
+}
+
+.memory-text.arabic {
+  direction: rtl;
+  font-size: 1.2rem;
+}
+
+.quiz-next {
+  margin-top: 18px;
+  border: none;
+  background: var(--terracotta);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.section-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-toggle button {
+  border: none;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.section-toggle button.active {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 14px 16px 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.audio-disclaimer {
+  max-width: 480px;
+  margin: 8px auto 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 12px;
+}
