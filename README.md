@@ -1,6 +1,6 @@
-# 🌙 Apprendre la Darija
+# 🌙 Dari — le darija en famille
 
-Application web pour apprendre le darija (arabe marocain) en famille, pensée
+**Dari** est une application web pour apprendre le darija (arabe marocain) en famille, pensée
 pour deux publics : un enfant qui ne sait pas encore lire, et un adulte qui veut
 comprendre et se faire comprendre chez sa belle-famille.
 

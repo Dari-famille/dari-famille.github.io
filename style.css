@@ -101,11 +101,21 @@ body {
   margin: 0;
   font-family: Georgia, "Iowan Old Style", ui-serif, serif;
   font-weight: 700;
-  font-size: clamp(1.5rem, 4vw, 2.1rem);
-  letter-spacing: 0.01em;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  letter-spacing: 0.02em;
   text-align: center;
   text-wrap: balance;
   color: var(--majorelle);
+}
+/* « Dari » seul est ambigu (c'est aussi le persan afghan) : la signature
+   l'accompagne systématiquement, à l'écran comme dans les métadonnées. */
+.app-header .tagline {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
 }
 
 .mode-toggle {
@@ -461,6 +471,19 @@ body {
   font-size: 0.78rem;
   line-height: 1.4;
   opacity: 0.85;
+}
+/* L'origine familiale de l'app est ce qui la distingue des cours de darija
+   génériques : elle est affichée, pas reléguée à une page « à propos ». */
+.origin {
+  max-width: 480px;
+  margin: 18px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--muted) 25%, transparent);
+  font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+  font-style: italic;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 
 .note {

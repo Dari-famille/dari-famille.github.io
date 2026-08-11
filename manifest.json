@@ -1,7 +1,7 @@
 {
-  "name": "Apprendre la Darija",
-  "short_name": "Darija",
-  "description": "Apprendre l'arabe marocain en famille : vocabulaire, quiz et jeux, pour les enfants comme pour les adultes. Fonctionne hors-ligne.",
+  "name": "Dari — le darija en famille",
+  "short_name": "Dari",
+  "description": "Apprendre le darija (arabe marocain) en famille. Conçu par un couple franco-marocain pour les familles mixtes, avec un mode enfant et un mode adulte. Fonctionne hors-ligne.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "./index.html",
