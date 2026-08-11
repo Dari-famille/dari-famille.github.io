@@ -678,7 +678,9 @@ function onMemoryFlip(idx) {
   const m = state.memory;
   if (m.busy || m.flipped.includes(idx) || m.matched.includes(idx)) return;
   const card = m.cards[idx];
-  if (card.kind === "audio") speak(card.item.arabic);
+  // On fait entendre le mot dès qu'une carte le porte : c'est la
+  // prononciation qu'on cherche à ancrer, pas l'orthographe latine.
+  if (card.kind === "audio" || card.kind === "latin") speak(card.item.arabic);
   m.flipped.push(idx);
   renderContent();
 
