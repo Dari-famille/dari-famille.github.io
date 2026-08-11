@@ -601,8 +601,13 @@ function buildMemoryDeck() {
   const pool = shuffle(cat.items).slice(0, kid ? 4 : 6);
   const cards = [];
   pool.forEach((item, i) => {
-    cards.push({ item, kind: kid ? "emoji" : "latin", pairId: i });
-    cards.push({ item, kind: kid ? "audio" : "arabic", pairId: i });
+    // Adulte : on associe le sens français à la prononciation. La version
+    // précédente demandait d'apparier la transcription à l'écriture arabe —
+    // un exercice de lecture de l'alphabet arabe, que personne dans le public
+    // visé n'a jamais appris, et qui n'a aucun rapport avec parler à sa
+    // belle-famille.
+    cards.push({ item, kind: kid ? "emoji" : "fr", pairId: i });
+    cards.push({ item, kind: kid ? "audio" : "latin", pairId: i });
   });
   state.memory.cards = shuffle(cards);
   state.memory.flipped = [];
@@ -626,7 +631,7 @@ function renderMemory(content) {
   intro.textContent =
     state.mode === "kid"
       ? "Retourne deux cartes : trouve l'image qui va avec le son !"
-      : "Retourne deux cartes : associe la transcription à l'écriture arabe.";
+      : "Retournez deux cartes : associez le sens français à sa prononciation.";
   box.appendChild(intro);
 
   const grid = document.createElement("div");
@@ -639,8 +644,8 @@ function renderMemory(content) {
     if (isFlipped || isMatched) {
       if (card.kind === "emoji") tile.innerHTML = `<span class="memory-emoji">${card.item.emoji}</span>`;
       else if (card.kind === "audio") tile.innerHTML = `<span class="memory-emoji">🔊</span>`;
-      else if (card.kind === "latin") tile.innerHTML = `<span class="memory-text">${card.item.latin}</span>`;
-      else tile.innerHTML = `<span class="memory-text arabic">${card.item.arabic}</span>`;
+      else if (card.kind === "latin") tile.innerHTML = `<span class="memory-text memory-latin">${card.item.latin}</span>`;
+      else tile.innerHTML = `<span class="memory-text memory-fr">${card.item.fr}</span>`;
     } else {
       tile.innerHTML = `<span class="memory-back">❓</span>`;
     }
