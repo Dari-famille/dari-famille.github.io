@@ -148,7 +148,9 @@ const SITUATIONS = [
         latin: "Ana ferhan bach ana hna",
         arabic: "أنا فرحان باش أنا هنا",
         check: true,
-        note: "Femme : « ferhana ». Formulation à faire confirmer.",
+        note:
+          "Femme : « ferhana ». Correction native reçue mais tronquée " +
+          "(« Ana fer… ») — à redemander avant publication.",
       },
       {
         fr: "Votre maison est très belle",
@@ -203,12 +205,9 @@ const SITUATIONS = [
       },
       {
         fr: "C'est le portrait de sa mère",
-        latin: "Kayechbeh mmo",
-        arabic: "كيشبه مو",
-        check: true,
-        note:
-          "Formulation courante mais plusieurs variantes existent — à faire " +
-          "valider.",
+        latin: "Kayechbeh mamah",
+        arabic: "كيشبه ماماه",
+        note: "Pour une fille : « katechbeh mamaha ».",
       },
     ],
   },
@@ -344,11 +343,10 @@ const SITUATIONS = [
       },
       {
         fr: "À toi !",
-        latin: "Dorek !",
-        arabic: "دورك",
+        latin: "Noubtek !",
+        arabic: "نوبتك",
         kid: true,
-        check: true,
-        note: "Littéralement « ton tour ». À faire confirmer.",
+        note: "De « nouba », le tour de quelqu'un.",
       },
       {
         fr: "Attends-moi !",
@@ -358,10 +356,9 @@ const SITUATIONS = [
       },
       {
         fr: "C'est mon tour",
-        latin: "Dori ana",
-        arabic: "دوري أنا",
+        latin: "Noubti",
+        arabic: "نوبتي",
         kid: true,
-        check: true,
       },
       {
         fr: "On y va !",
@@ -1025,19 +1022,31 @@ function linesToCheck() {
   });
 
   copyBtn.onclick = () => {
-    // Ne remonte que les corrections : la liste des « c'est juste » n'apporte
-    // rien à qui doit reporter les changements dans le fichier.
-    const fixes = items
-      .map((item, i) => ({ item, a: answers[i] }))
-      .filter((x) => x.a && x.a.v === "ko");
+    const answered = items.map((item, i) => ({ item, a: answers[i] })).filter((x) => x.a);
+    const fixes = answered.filter((x) => x.a.v === "ko");
+    // Les expressions validées doivent remonter elles aussi : sans leur liste,
+    // impossible de savoir lesquelles sont acquises, et la relectrice devrait
+    // les reprendre une deuxième fois au tour suivant.
+    const oks = answered.filter((x) => x.a.v === "ok");
 
-    let out = "Relecture Dari — " + Object.keys(answers).length + "/" + items.length + " relues\n";
-    out += fixes.length ? fixes.length + " à corriger :\n\n" : "\nRien à corriger 🎉";
+    let out = "Relecture Dari — " + answered.length + "/" + items.length + " relues\n\n";
+
+    out += fixes.length ? "À CORRIGER (" + fixes.length + ") :\n" : "Rien à corriger 🎉\n";
     fixes.forEach((x) => {
       out += "• " + x.item.fr + "\n";
       out += "  écrit : " + x.item.latin + "\n";
       out += "  juste : " + (x.a.fix || "(à préciser)") + "\n\n";
     });
+
+    if (oks.length) {
+      out += "\nVALIDÉES (" + oks.length + ") :\n";
+      oks.forEach((x) => {
+        out += "• " + x.item.latin + "\n";
+      });
+    }
+
+    const restantes = items.length - answered.length;
+    if (restantes > 0) out += "\nPas encore relues : " + restantes + "\n";
 
     navigator.clipboard.writeText(out).then(
       () => { copyBtn.textContent = "✅ Copié"; setTimeout(() => (copyBtn.textContent = "Copier"), 1800); },
