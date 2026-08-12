@@ -511,6 +511,18 @@ function renderAdultQuizBody(box) {
 // ---- Situations ----
 // Deux écrans : la liste des scènes, puis le détail d'une scène. Le détail se
 // lit comme une antisèche qu'on ouvre juste avant d'entrer dans la pièce.
+// Les libellés de base s'adressent au parent (« mon enfant a besoin de… ») :
+// affichés tels quels en mode Enfant, ils parlent de l'enfant au lieu de lui
+// parler. Les scènes destinées aux deux publics portent donc leur propre
+// formulation côté enfant.
+function situationLabel(sit) {
+  return state.mode === "kid" && sit.kidLabel ? sit.kidLabel : sit.label;
+}
+
+function situationIntro(sit) {
+  return state.mode === "kid" && sit.kidIntro ? sit.kidIntro : sit.intro;
+}
+
 function renderSituations(content) {
   const sits = currentSituations();
   const current = sits.find((s) => s.id === state.situationId);
@@ -532,7 +544,7 @@ function renderSituations(content) {
       card.className = "situation-card";
       card.innerHTML = `
         <span class="situation-emoji">${sit.emoji}</span>
-        <span class="situation-label">${sit.label}</span>
+        <span class="situation-label">${situationLabel(sit)}</span>
         <span class="situation-count">${sit.lines.length} phrases</span>
       `;
       card.addEventListener("click", () => {
@@ -558,8 +570,8 @@ function renderSituations(content) {
   const head = document.createElement("div");
   head.className = "situation-head";
   head.innerHTML = `
-    <h2>${current.emoji} ${current.label}</h2>
-    ${current.intro ? `<p>${current.intro}</p>` : ""}
+    <h2>${current.emoji} ${situationLabel(current)}</h2>
+    ${situationIntro(current) ? `<p>${situationIntro(current)}</p>` : ""}
   `;
   content.appendChild(head);
 
