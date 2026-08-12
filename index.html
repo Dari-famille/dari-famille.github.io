@@ -50,12 +50,44 @@
     // Le service worker rend l'app installable et utilisable sans connexion.
     // Il exige HTTPS (ou localhost) : en ouvrant le fichier via file://
     // l'enregistrement échoue, sans conséquence pour le reste de l'app.
+    //
+    // Il sert aussi le contenu depuis son cache : une version fraîchement
+    // déployée n'apparaît donc qu'au lancement SUIVANT. Avec plusieurs
+    // correctifs par jour, un utilisateur peut rester longtemps sur une
+    // version périmée sans le savoir. On l'en avertit dès que la nouvelle
+    // version est prête, plutôt que de recharger dans son dos — un
+    // rechargement surprise interromprait un enfant en plein quiz.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("sw.js")
+          .then((reg) => {
+            reg.addEventListener("updatefound", () => {
+              const nouveau = reg.installing;
+              if (!nouveau) return;
+              nouveau.addEventListener("statechange", () => {
+                // Un contrôleur existant signifie que ce n'est pas la
+                // première installation : c'est bien une mise à jour.
+                if (nouveau.state === "installed" && navigator.serviceWorker.controller) {
+                  annoncerMiseAJour();
+                }
+              });
+            });
+          })
           .catch((err) => console.warn("Service worker non enregistré :", err));
       });
+    }
+
+    function annoncerMiseAJour() {
+      if (document.querySelector(".update-bar")) return;
+      const bar = document.createElement("div");
+      bar.className = "update-bar";
+      bar.innerHTML = '<span>Une nouvelle version de Dari est prête.</span>';
+      const btn = document.createElement("button");
+      btn.textContent = "Actualiser";
+      btn.addEventListener("click", () => location.reload());
+      bar.appendChild(btn);
+      document.body.appendChild(bar);
     }
   </script>
 </body>

@@ -1,0 +1,7 @@
+# Pages de travail : utiles par lien direct, sans intérêt pour un moteur.
+User-agent: *
+Disallow: /relecture.html
+Disallow: /enregistrement.html
+Disallow: /standalone.html
+
+Sitemap: https://dari-famille.github.io/sitemap.xml
