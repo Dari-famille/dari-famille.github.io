@@ -23,9 +23,9 @@ function saveMode(mode) {
 const state = {
   mode: savedMode(), // "kid" | "adult"
   categoryId: CATEGORIES.find((c) => c.kidFriendly).id,
-  // La section par défaut suit le mode : le mode adulte affiche une liste,
-  // le mode enfant des cartes. Un adulte qui revient tombait sinon sur les
-  // grandes cartes illustrées destinées à un enfant.
+  // La section par défaut suit le mode. Le quiz est ce qui retient un
+  // enfant — un enfant de huit ans testé sans consigne y est resté, là où
+  // les cartes le laissaient indifférent — il ouvre donc le mode Enfant.
   section: savedMode() === "adult" ? "list" : "quiz",
   quiz: {
     question: null,
@@ -153,7 +153,7 @@ function renderCategoryNav() {
     btn.textContent = `${cat.emoji} ${cat.label}`;
     btn.addEventListener("click", () => {
       state.categoryId = cat.id;
-      state.section = state.mode === "kid" ? "cards" : "list";
+      state.section = state.mode === "kid" ? "quiz" : "list";
       renderCategoryNav();
       renderContent();
     });

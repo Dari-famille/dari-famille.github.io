@@ -552,6 +552,19 @@ body {
   cursor: pointer;
 }
 
+/* Série de bonnes réponses : placée au-dessus de la question, c'est elle qui
+   donne envie d'enchaîner. Un enfant ne va pas lire un score en pied de page. */
+.kid-streak {
+  margin: -4px 0 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--saffron) 22%, transparent);
+  color: var(--terracotta);
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: inline-block;
+}
+
 /* Consigne du mode Enfant : elle précède la grille et doit se voir sans
    effort, sans pour autant occuper la place d'une carte. */
 .kid-hint {
