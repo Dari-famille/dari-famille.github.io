@@ -35,9 +35,10 @@ def main():
 
     # CSS : <link rel="stylesheet" href="style.css" />  ->  <style>…</style>
     css = read("style.css")
+    styles = "\n  <style>\n" + css + "</style>"
     html, n = re.subn(
         r'\s*<link rel="stylesheet" href="style\.css"\s*/?>',
-        "\n  <style>\n" + css + "</style>",
+        lambda _m: styles,
         html,
     )
     if n != 1:
@@ -52,7 +53,11 @@ def main():
     for js_name in scripts:
         js = read(js_name)
         pattern = r'\s*<script src="%s"></script>' % re.escape(js_name)
-        html, n = re.subn(pattern, "\n  <script>\n" + js + "</script>", html, count=1)
+        # Le remplacement passe par une fonction : sous forme de chaîne, les
+        # antislashs du JavaScript (\u, \n, \1…) seraient lus comme des
+        # séquences d'échappement et feraient échouer la génération.
+        remplacement = "\n  <script>\n" + js + "</script>"
+        html, n = re.subn(pattern, lambda _m: remplacement, html, count=1)
         if n != 1:
             sys.exit(f"La balise script de {js_name} est introuvable dans index.html")
     print("  scripts inlinés :", ", ".join(scripts))
@@ -141,7 +146,8 @@ def build_enregistrement():
     for name in ("situations.js", "data.js"):
         js = read(name)
         pattern = r'\s*<script src="%s"></script>' % re.escape(name)
-        html, n = re.subn(pattern, "\n<script>\n" + js + "</script>", html, count=1)
+        remplacement = "\n<script>\n" + js + "</script>"
+        html, n = re.subn(pattern, lambda _m: remplacement, html, count=1)
         if n != 1:
             sys.exit(f"La balise script de {name} est introuvable dans le modèle d'enregistrement")
 
@@ -161,9 +167,10 @@ def build_relecture():
 
     html = RELECTURE_SRC.read_text(encoding="utf-8")
     js = read("situations.js")
+    remplacement = "\n<script>\n" + js + "</script>"
     html, n = re.subn(
         r'\s*<script src="situations\.js"></script>',
-        "\n<script>\n" + js + "</script>",
+        lambda _m: remplacement,
         html,
         count=1,
     )

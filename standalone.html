@@ -1080,6 +1080,69 @@ body {
   font-size: 0.9rem;
   cursor: pointer;
 }
+
+/* ---- Recherche ---- */
+.search-wrap {
+  max-width: 560px;
+  margin: 0 auto 18px;
+}
+.search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--majorelle) 30%, transparent);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+.search-input:focus-visible {
+  outline: 3px solid var(--saffron);
+  outline-offset: 2px;
+  border-color: var(--majorelle);
+}
+
+/* Provenance d'une entrée trouvée : sans elle, un résultat sorti de son
+   contexte ne dit pas dans quelle situation on l'emploie. */
+.entry-source {
+  font-size: 0.78rem;
+  color: var(--majorelle);
+  opacity: 0.85;
+}
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.entry-actions .speak-btn { margin-top: 0; }
+
+/* ---- Favoris ---- */
+.fav-btn {
+  margin-inline-start: auto;
+  min-width: 46px;
+  min-height: 46px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, color 0.15s ease;
+}
+.fav-btn:hover { transform: scale(1.15); }
+.fav-btn.on { color: var(--saffron); }
+.fav-btn:focus-visible {
+  outline: 3px solid var(--saffron);
+  outline-offset: 2px;
+}
+.category-btn.favoris-btn {
+  background: var(--saffron);
+  color: #2a2013;
+  font-weight: 700;
+}
 </style>
 </head>
 <body>
@@ -2670,6 +2733,7 @@ const state = {
     object: null,
   },
   situationId: null, // situation ouverte, null = liste des situations
+  query: "", // recherche en cours
   memory: {
     cards: [],
     flipped: [],
@@ -2818,6 +2882,7 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
 // un identifiant réservé dans la même barre de navigation, parce que c'est
 // bien le même choix pour l'utilisateur — « qu'est-ce que je travaille ? ».
 const SITUATIONS_ID = "__situations__";
+const FAVORIS_ID = "__favoris__";
 
 function currentSituations() {
   if (typeof SITUATIONS === "undefined") return [];
@@ -2831,6 +2896,22 @@ function currentSituations() {
 function renderCategoryNav() {
   const nav = document.getElementById("category-nav");
   nav.innerHTML = "";
+
+  // Les favoris n'apparaissent que s'il y en a : un onglet vide n'apprend
+  // rien et occupe la place d'une catégorie utile.
+  if (favoris.size > 0) {
+    const favBtn = document.createElement("button");
+    favBtn.className =
+      "category-btn favoris-btn" + (state.categoryId === FAVORIS_ID ? " active" : "");
+    favBtn.textContent = `★ Favoris (${favoris.size})`;
+    favBtn.addEventListener("click", () => {
+      state.categoryId = FAVORIS_ID;
+      state.query = "";
+      renderCategoryNav();
+      renderContent();
+    });
+    nav.appendChild(favBtn);
+  }
 
   if (currentSituations().length > 0) {
     const sitBtn = document.createElement("button");
@@ -2869,6 +2950,20 @@ function renderContent() {
 
   document.getElementById("category-nav").style.display =
     state.section === "builder" ? "none" : "";
+
+  renderSearchBar(content);
+
+  // Une recherche en cours l'emporte sur la catégorie choisie : c'est ce que
+  // l'utilisateur vient de demander.
+  if (state.query.trim().length >= 2) {
+    renderResults(content);
+    return;
+  }
+
+  if (state.categoryId === FAVORIS_ID) {
+    renderFavoris(content);
+    return;
+  }
 
   // Les situations ont leur propre mise en page : ni cartes, ni quiz, ni
   // barre de progression — on sort avant de construire tout ça.
@@ -3017,20 +3112,9 @@ function renderAdultList(content) {
   const cat = getCategory();
   const grid = document.createElement("div");
   grid.className = "card-grid";
-  cat.items.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "vocab-card";
-    card.innerHTML = `
-      <div class="fr">${item.fr}</div>
-      <div class="latin">${item.latin}</div>
-      <div class="arabic">${item.arabic}</div>
-      <button class="speak-btn">🔊 Écouter</button>
-    `;
-    card.querySelector(".speak-btn").addEventListener("click", () =>
-      speak(item)
-    );
-    grid.appendChild(card);
-  });
+  // Même carte que la recherche et les favoris : une seule mise en forme à
+  // maintenir, et le bouton favori disponible partout.
+  cat.items.forEach((item) => grid.appendChild(carteEntree(item)));
   content.appendChild(grid);
 }
 
@@ -3747,13 +3831,8 @@ function renderFeedbackPrompt(content) {
     "mailto:dari.famille@proton.me" +
     "?subject=" + encodeURIComponent("Dari — il me manque un mot") +
     "&body=" + encodeURIComponent(
-      "Le mot ou la phrase qui me manque :
-
-
-" +
-      "La situation où j'en aurais besoin :
-
-"
+      "Le mot ou la phrase qui me manque :\n\n\n" +
+      "La situation où j'en aurais besoin :\n\n"
     );
   write.textContent = "✉️ Dire ce qui manque";
   write.addEventListener("click", () => {
@@ -3772,6 +3851,205 @@ function renderFeedbackPrompt(content) {
   actions.append(write, later);
   box.appendChild(actions);
   content.appendChild(box);
+}
+
+// ---- Rendu de la recherche et des favoris ----
+function renderSearchBar(content) {
+  // Le mode Enfant n'a pas de recherche : à quatre ans on ne tape pas, et le
+  // champ ne ferait qu'encombrer un écran déjà chargé.
+  if (state.mode === "kid") return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "search-wrap";
+
+  const input = document.createElement("input");
+  input.type = "search";
+  input.className = "search-input";
+  input.placeholder = "Chercher un mot… (fièvre, merci, aji)";
+  input.setAttribute("aria-label", "Chercher un mot ou une expression");
+  input.value = state.query;
+
+  // On ne redessine que la zone de résultats : recréer la barre à chaque
+  // frappe ferait perdre le curseur au bout d'une lettre.
+  input.addEventListener("input", () => {
+    state.query = input.value;
+    const zone = document.getElementById("search-results");
+    if (zone) zone.remove();
+    const reste = document.getElementById("main-body");
+    if (reste) reste.style.display = state.query.trim().length >= 2 ? "none" : "";
+    if (state.query.trim().length >= 2) renderResults(content, true);
+  });
+
+  wrap.appendChild(input);
+  content.appendChild(wrap);
+}
+
+function carteEntree(item, source) {
+  const card = document.createElement("div");
+  card.className = "vocab-card";
+  card.innerHTML = `
+    <div class="fr">${item.fr}</div>
+    <div class="latin">${item.latin}</div>
+    <div class="arabic">${item.arabic}</div>
+    ${source ? `<div class="entry-source">${source}</div>` : ""}
+  `;
+  const actions = document.createElement("div");
+  actions.className = "entry-actions";
+
+  const speakBtn = document.createElement("button");
+  speakBtn.className = "speak-btn";
+  speakBtn.textContent = "🔊 Écouter";
+  speakBtn.addEventListener("click", () => speak(item));
+
+  actions.append(speakBtn, boutonFavori(item, () => {
+    renderCategoryNav();
+    if (state.categoryId === FAVORIS_ID) renderContent();
+  }));
+  card.appendChild(actions);
+  return card;
+}
+
+function renderResults(content, seulementResultats) {
+  const zone = document.createElement("div");
+  zone.id = "search-results";
+
+  const res = rechercher(state.query);
+  const titre = document.createElement("p");
+  titre.className = "note";
+  titre.style.marginTop = "0";
+  titre.textContent = res.length
+    ? `${res.length} résultat${res.length > 1 ? "s" : ""} pour « ${state.query.trim()} »`
+    : `Aucun résultat pour « ${state.query.trim()} ». Dites-nous ce qui manque !`;
+  zone.appendChild(titre);
+
+  const grid = document.createElement("div");
+  grid.className = "card-grid";
+  res.slice(0, 60).forEach(({ item, source }) => grid.appendChild(carteEntree(item, source)));
+  zone.appendChild(grid);
+
+  if (res.length > 60) {
+    const p = document.createElement("p");
+    p.className = "note";
+    p.textContent = "Affinez votre recherche pour voir le reste.";
+    zone.appendChild(p);
+  }
+
+  content.appendChild(zone);
+  if (seulementResultats) return;
+}
+
+function renderFavoris(content) {
+  const tous = toutesLesEntrees().filter(({ item }) => estFavori(item));
+
+  if (tous.length === 0) {
+    const vide = document.createElement("p");
+    vide.className = "note";
+    vide.textContent = "Aucun favori pour l'instant. Touchez ☆ sur un mot pour le garder ici.";
+    content.appendChild(vide);
+    return;
+  }
+
+  const titre = document.createElement("p");
+  titre.className = "note";
+  titre.style.marginTop = "0";
+  titre.textContent = "Vos mots gardés sous la main.";
+  content.appendChild(titre);
+
+  const grid = document.createElement("div");
+  grid.className = "card-grid";
+  tous.forEach(({ item, source }) => grid.appendChild(carteEntree(item, source)));
+  content.appendChild(grid);
+}
+
+// ---- Favoris ----
+// Trois cent trente-huit entrées, et aucun moyen de retrouver les cinq qu'on
+// utilise vraiment. Le favori règle ça sans rien demander à personne : il vit
+// sur l'appareil, comme le reste de la progression.
+const FAV_KEY = "dari-favoris-v1";
+
+function chargerFavoris() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(FAV_KEY)) || []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+let favoris = chargerFavoris();
+
+function estFavori(item) {
+  return favoris.has(cleAudio(item));
+}
+
+function basculerFavori(item) {
+  const cle = cleAudio(item);
+  if (favoris.has(cle)) favoris.delete(cle);
+  else favoris.add(cle);
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify([...favoris]));
+  } catch (e) {
+    /* sans stockage, les favoris ne survivent pas à la session */
+  }
+}
+
+function boutonFavori(item, onChange) {
+  const btn = document.createElement("button");
+  btn.className = "fav-btn" + (estFavori(item) ? " on" : "");
+  btn.textContent = estFavori(item) ? "★" : "☆";
+  btn.setAttribute(
+    "aria-label",
+    estFavori(item) ? "Retirer des favoris" : "Ajouter aux favoris"
+  );
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    basculerFavori(item);
+    btn.className = "fav-btn" + (estFavori(item) ? " on" : "");
+    btn.textContent = estFavori(item) ? "★" : "☆";
+    if (onChange) onChange();
+  });
+  return btn;
+}
+
+// ---- Recherche ----
+// Chercher « fièvre » obligeait à parcourir vingt-cinq catégories. La
+// recherche balaie le vocabulaire et les situations d'un coup — c'est l'usage
+// réel du quotidien, quand on cherche un mot précis juste avant d'en avoir
+// besoin.
+function normaliser(t) {
+  // On ignore accents et casse : personne ne tape « métro » avec l'accent
+  // quand il cherche vite, et le darija translittéré varie.
+  return (t || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function toutesLesEntrees() {
+  const out = [];
+  CATEGORIES.forEach((c) => {
+    c.items.forEach((i) => out.push({ item: i, source: c.emoji + " " + c.label }));
+  });
+  if (typeof SITUATIONS !== "undefined") {
+    SITUATIONS.forEach((sit) => {
+      if (sit.refs) return; // le kit ne fait que pointer ailleurs
+      sit.lines.forEach((l) =>
+        out.push({ item: l, source: sit.emoji + " " + situationLabel(sit) })
+      );
+    });
+  }
+  return out;
+}
+
+function rechercher(q) {
+  const n = normaliser(q);
+  if (n.length < 2) return [];
+  return toutesLesEntrees().filter(({ item }) => {
+    return (
+      normaliser(item.fr).includes(n) ||
+      normaliser(item.latin).includes(n) ||
+      (item.arabic || "").includes(q)
+    );
+  });
 }
 
 // ---- Arrivée depuis un lien ciblé ----
