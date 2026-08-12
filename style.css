@@ -737,3 +737,61 @@ body {
   font-size: 0.85rem;
   margin-top: 12px;
 }
+
+/* Invitation à installer : barre basse, non modale — elle ne doit jamais
+   empêcher d'utiliser l'app, seulement se laisser voir. */
+.install-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.22);
+  animation: install-in 0.3s ease;
+}
+@keyframes install-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-bar { animation: none; }
+}
+.install-text {
+  flex: 1;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.install-text strong { font-size: 0.95rem; }
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.install-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: var(--saffron);
+  color: #2a2013;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.install-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  padding: 6px 8px;
+  cursor: pointer;
+  opacity: 0.75;
+}

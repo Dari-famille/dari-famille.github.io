@@ -911,3 +911,96 @@ renderCategoryNav();
 renderContent();
 saveScore();
 if (!alreadyWelcomed()) renderWelcome();
+
+// ---- Invitation à installer ----
+// Sans collecte d'e-mail — impossible tant que le responsable de traitement
+// n'est pas défini — l'installation sur l'écran d'accueil est le seul moyen
+// de ne pas perdre un visiteur pour de bon. Elle ne demande aucune donnée.
+const INSTALL_KEY = "dari-install-v1";
+
+let deferredInstall = null;
+
+function isInstalled() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function installDismissed() {
+  try {
+    return localStorage.getItem(INSTALL_KEY) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function dismissInstall() {
+  try {
+    localStorage.setItem(INSTALL_KEY, "1");
+  } catch (e) {
+    /* sans stockage, l'invitation réapparaîtra */
+  }
+}
+
+// Chrome émet cet événement quand l'app remplit les critères d'installation :
+// on le retient pour déclencher la vraie fenêtre système au bon moment.
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+});
+
+function renderInstallBanner() {
+  if (isInstalled() || installDismissed()) return;
+
+  // iOS n'expose aucune API d'installation : Safari exige un passage par le
+  // menu Partager, qu'il faut donc expliquer plutôt que déclencher.
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!deferredInstall && !isIOS) return;
+
+  const bar = document.createElement("div");
+  bar.className = "install-bar";
+  bar.innerHTML = `
+    <span class="install-text">
+      <strong>Gardez Dari sous la main</strong>
+      ${isIOS
+        ? "Partager <span aria-hidden=\"true\">→</span> « Sur l'écran d'accueil »"
+        : "Installez l'app : elle marche sans connexion."}
+    </span>
+  `;
+
+  const actions = document.createElement("div");
+  actions.className = "install-actions";
+
+  if (!isIOS) {
+    const install = document.createElement("button");
+    install.className = "install-btn";
+    install.textContent = "Installer";
+    install.addEventListener("click", async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+      deferredInstall = null;
+      dismissInstall();
+      bar.remove();
+    });
+    actions.appendChild(install);
+  }
+
+  const close = document.createElement("button");
+  close.className = "install-close";
+  close.setAttribute("aria-label", "Masquer");
+  close.textContent = "✕";
+  close.addEventListener("click", () => {
+    dismissInstall();
+    bar.remove();
+  });
+  actions.appendChild(close);
+
+  bar.appendChild(actions);
+  document.body.appendChild(bar);
+}
+
+// On laisse l'utilisateur découvrir l'app avant de lui proposer de l'installer :
+// une invitation servie à la première seconde est refusée par réflexe.
+setTimeout(renderInstallBanner, 45000);

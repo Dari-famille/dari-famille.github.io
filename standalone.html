@@ -752,6 +752,64 @@ body {
   font-size: 0.85rem;
   margin-top: 12px;
 }
+
+/* Invitation à installer : barre basse, non modale — elle ne doit jamais
+   empêcher d'utiliser l'app, seulement se laisser voir. */
+.install-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.22);
+  animation: install-in 0.3s ease;
+}
+@keyframes install-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-bar { animation: none; }
+}
+.install-text {
+  flex: 1;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.install-text strong { font-size: 0.95rem; }
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.install-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: var(--saffron);
+  color: #2a2013;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.install-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  padding: 6px 8px;
+  cursor: pointer;
+  opacity: 0.75;
+}
 </style>
 </head>
 <body>
@@ -3206,6 +3264,99 @@ renderCategoryNav();
 renderContent();
 saveScore();
 if (!alreadyWelcomed()) renderWelcome();
+
+// ---- Invitation à installer ----
+// Sans collecte d'e-mail — impossible tant que le responsable de traitement
+// n'est pas défini — l'installation sur l'écran d'accueil est le seul moyen
+// de ne pas perdre un visiteur pour de bon. Elle ne demande aucune donnée.
+const INSTALL_KEY = "dari-install-v1";
+
+let deferredInstall = null;
+
+function isInstalled() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function installDismissed() {
+  try {
+    return localStorage.getItem(INSTALL_KEY) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function dismissInstall() {
+  try {
+    localStorage.setItem(INSTALL_KEY, "1");
+  } catch (e) {
+    /* sans stockage, l'invitation réapparaîtra */
+  }
+}
+
+// Chrome émet cet événement quand l'app remplit les critères d'installation :
+// on le retient pour déclencher la vraie fenêtre système au bon moment.
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+});
+
+function renderInstallBanner() {
+  if (isInstalled() || installDismissed()) return;
+
+  // iOS n'expose aucune API d'installation : Safari exige un passage par le
+  // menu Partager, qu'il faut donc expliquer plutôt que déclencher.
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!deferredInstall && !isIOS) return;
+
+  const bar = document.createElement("div");
+  bar.className = "install-bar";
+  bar.innerHTML = `
+    <span class="install-text">
+      <strong>Gardez Dari sous la main</strong>
+      ${isIOS
+        ? "Partager <span aria-hidden=\"true\">→</span> « Sur l'écran d'accueil »"
+        : "Installez l'app : elle marche sans connexion."}
+    </span>
+  `;
+
+  const actions = document.createElement("div");
+  actions.className = "install-actions";
+
+  if (!isIOS) {
+    const install = document.createElement("button");
+    install.className = "install-btn";
+    install.textContent = "Installer";
+    install.addEventListener("click", async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+      deferredInstall = null;
+      dismissInstall();
+      bar.remove();
+    });
+    actions.appendChild(install);
+  }
+
+  const close = document.createElement("button");
+  close.className = "install-close";
+  close.setAttribute("aria-label", "Masquer");
+  close.textContent = "✕";
+  close.addEventListener("click", () => {
+    dismissInstall();
+    bar.remove();
+  });
+  actions.appendChild(close);
+
+  bar.appendChild(actions);
+  document.body.appendChild(bar);
+}
+
+// On laisse l'utilisateur découvrir l'app avant de lui proposer de l'installer :
+// une invitation servie à la première seconde est refusée par réflexe.
+setTimeout(renderInstallBanner, 45000);
 </script>
 </body>
 </html>
