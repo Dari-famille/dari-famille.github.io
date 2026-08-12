@@ -552,6 +552,17 @@ body {
   cursor: pointer;
 }
 
+/* Consigne du mode Enfant : elle précède la grille et doit se voir sans
+   effort, sans pour autant occuper la place d'une carte. */
+.kid-hint {
+  margin: 0 auto 16px;
+  max-width: 460px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+
 /* ---- Situations ----
    Les situations sont l'entrée principale du mode Adulte : leur bouton est
    distingué du reste de la barre pour qu'on le trouve sans le chercher. */

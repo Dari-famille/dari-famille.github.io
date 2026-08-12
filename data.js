@@ -304,7 +304,7 @@ const CATEGORIES = [
     id: "expressions",
     label: "Expressions courantes",
     emoji: "🗨️",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Si Dieu le veut", latin: "InchaAllah", arabic: "ان شاء الله", emoji: "🙏" },
       { fr: "Dieu merci", latin: "Hamdoulillah", arabic: "الحمد لله", emoji: "🙏" },
@@ -322,7 +322,7 @@ const CATEGORIES = [
     id: "transport",
     label: "Transport",
     emoji: "🚗",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Voiture", latin: "Tomobil", arabic: "طوموبيل", emoji: "🚗" },
       { fr: "Taxi", latin: "Taxi", arabic: "طاكسي", emoji: "🚕" },
@@ -339,7 +339,7 @@ const CATEGORIES = [
     id: "meteo",
     label: "Météo & Saisons",
     emoji: "🌦️",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Il fait chaud", latin: "Skhoun l-jou", arabic: "سخون الجو", emoji: "🥵" },
       { fr: "Il fait froid", latin: "Bared l-jou", arabic: "بارد الجو", emoji: "🥶" },
@@ -357,7 +357,7 @@ const CATEGORIES = [
     id: "vetements",
     label: "Vêtements",
     emoji: "👕",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Vêtements", latin: "Hwayj", arabic: "حوايج", emoji: "👕" },
       { fr: "Chaussures", latin: "Sebbat", arabic: "سبّاط", emoji: "👟" },

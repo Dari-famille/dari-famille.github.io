@@ -567,6 +567,17 @@ body {
   cursor: pointer;
 }
 
+/* Consigne du mode Enfant : elle précède la grille et doit se voir sans
+   effort, sans pour autant occuper la place d'une carte. */
+.kid-hint {
+  margin: 0 auto 16px;
+  max-width: 460px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+
 /* ---- Situations ----
    Les situations sont l'entrée principale du mode Adulte : leur bouton est
    distingué du reste de la barre pour qu'on le trouve sans le chercher. */
@@ -1058,7 +1069,7 @@ const CATEGORIES = [
     id: "expressions",
     label: "Expressions courantes",
     emoji: "🗨️",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Si Dieu le veut", latin: "InchaAllah", arabic: "ان شاء الله", emoji: "🙏" },
       { fr: "Dieu merci", latin: "Hamdoulillah", arabic: "الحمد لله", emoji: "🙏" },
@@ -1076,7 +1087,7 @@ const CATEGORIES = [
     id: "transport",
     label: "Transport",
     emoji: "🚗",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Voiture", latin: "Tomobil", arabic: "طوموبيل", emoji: "🚗" },
       { fr: "Taxi", latin: "Taxi", arabic: "طاكسي", emoji: "🚕" },
@@ -1093,7 +1104,7 @@ const CATEGORIES = [
     id: "meteo",
     label: "Météo & Saisons",
     emoji: "🌦️",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Il fait chaud", latin: "Skhoun l-jou", arabic: "سخون الجو", emoji: "🥵" },
       { fr: "Il fait froid", latin: "Bared l-jou", arabic: "بارد الجو", emoji: "🥶" },
@@ -1111,7 +1122,7 @@ const CATEGORIES = [
     id: "vetements",
     label: "Vêtements",
     emoji: "👕",
-    kidFriendly: true,
+    kidFriendly: false,
     items: [
       { fr: "Vêtements", latin: "Hwayj", arabic: "حوايج", emoji: "👕" },
       { fr: "Chaussures", latin: "Sebbat", arabic: "سبّاط", emoji: "👟" },
@@ -2544,6 +2555,15 @@ function makeToggleBtn(label, active, onClick) {
 // ---- Mode enfant : grandes cartes ----
 function renderKidCards(content) {
   const cat = getCategory();
+
+  // La consigne était placée après la grille : sur un téléphone, il fallait
+  // faire défiler toutes les cartes pour la découvrir — donc l'avoir déjà
+  // comprise. Elle vient maintenant avant, là où on la lit.
+  const note = document.createElement("p");
+  note.className = "note kid-hint";
+  note.textContent = "👉 Touche une carte pour entendre le mot !";
+  content.appendChild(note);
+
   const grid = document.createElement("div");
   grid.className = "kid-grid";
   cat.items.forEach((item) => {
@@ -2558,11 +2578,6 @@ function renderKidCards(content) {
     grid.appendChild(card);
   });
   content.appendChild(grid);
-
-  const note = document.createElement("p");
-  note.className = "note";
-  note.textContent = "👉 Touche une carte pour entendre le mot !";
-  content.appendChild(note);
 }
 
 // ---- Mode adulte : liste complète ----

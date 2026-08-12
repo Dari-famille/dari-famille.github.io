@@ -273,6 +273,15 @@ function makeToggleBtn(label, active, onClick) {
 // ---- Mode enfant : grandes cartes ----
 function renderKidCards(content) {
   const cat = getCategory();
+
+  // La consigne était placée après la grille : sur un téléphone, il fallait
+  // faire défiler toutes les cartes pour la découvrir — donc l'avoir déjà
+  // comprise. Elle vient maintenant avant, là où on la lit.
+  const note = document.createElement("p");
+  note.className = "note kid-hint";
+  note.textContent = "👉 Touche une carte pour entendre le mot !";
+  content.appendChild(note);
+
   const grid = document.createElement("div");
   grid.className = "kid-grid";
   cat.items.forEach((item) => {
@@ -287,11 +296,6 @@ function renderKidCards(content) {
     grid.appendChild(card);
   });
   content.appendChild(grid);
-
-  const note = document.createElement("p");
-  note.className = "note";
-  note.textContent = "👉 Touche une carte pour entendre le mot !";
-  content.appendChild(note);
 }
 
 // ---- Mode adulte : liste complète ----
