@@ -989,3 +989,53 @@ body {
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Demande de retour : elle apparaît après une douzaine de réponses, quand la
+   personne s'est fait une idée. Posée trop tôt, elle interrompt ; posée dans
+   un pied de page, elle n'est jamais lue. */
+.feedback-box {
+  max-width: 460px;
+  margin: 0 auto 20px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--emerald) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--emerald) 40%, transparent);
+  text-align: center;
+}
+.feedback-q { margin: 0 0 4px; font-weight: 700; font-size: 1.02rem; }
+.feedback-sub {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.feedback-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.feedback-write {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--emerald);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.94rem;
+  text-decoration: none;
+}
+.feedback-later {
+  min-height: 46px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}

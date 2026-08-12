@@ -241,6 +241,7 @@ function renderContent() {
   content.appendChild(toggle);
 
   renderProgress(content);
+  renderFeedbackPrompt(content);
 
   if (state.section === "quiz") {
     renderQuiz(content);
@@ -1009,6 +1010,78 @@ function renderWelcome() {
   overlay.querySelector(".welcome-skip").addEventListener("click", () => close(null));
 
   document.body.appendChild(overlay);
+}
+
+// ---- Demande de retour, au bon moment ----
+// Le lien du pied de page est passif : on n'écrit pas spontanément à un pied
+// de page. La question se pose après un usage réel, une seule fois, et porte
+// sur ce qui manque — pas sur « aimez-vous l'app ? », à quoi tout le monde
+// répond oui sans rien apprendre à personne.
+const FEEDBACK_KEY = "dari-feedback-v1";
+const FEEDBACK_SEUIL = 12; // réponses de quiz avant de se manifester
+
+function feedbackDejaVu() {
+  try {
+    return localStorage.getItem(FEEDBACK_KEY) === "1";
+  } catch (e) {
+    return true; // sans stockage, on ne redemande pas à chaque écran
+  }
+}
+
+function classerFeedback() {
+  try {
+    localStorage.setItem(FEEDBACK_KEY, "1");
+  } catch (e) {
+    /* sans stockage, la question pourrait revenir : sans gravité */
+  }
+}
+
+function peutDemanderFeedback() {
+  return !feedbackDejaVu() && score.total >= FEEDBACK_SEUIL;
+}
+
+function renderFeedbackPrompt(content) {
+  if (!peutDemanderFeedback()) return;
+
+  const box = document.createElement("div");
+  box.className = "feedback-box";
+  box.innerHTML = `
+    <p class="feedback-q">Un mot vous manque&nbsp;?</p>
+    <p class="feedback-sub">Dites-nous lequel — on l'ajoute. C'est comme ça que
+    Dari s'est construite jusqu'ici.</p>
+  `;
+
+  const actions = document.createElement("div");
+  actions.className = "feedback-actions";
+
+  const write = document.createElement("a");
+  write.className = "feedback-write";
+  // Le sujet pré-rempli permet de retrouver ces messages d'un coup d'œil, et
+  // le corps amorce la réponse : une page blanche fait abandonner.
+  write.href =
+    "mailto:dari.famille@proton.me" +
+    "?subject=" + encodeURIComponent("Dari — il me manque un mot") +
+    "&body=" + encodeURIComponent(
+      "Le mot ou la phrase qui me manque :\n\n\n" +
+      "La situation où j'en aurais besoin :\n\n"
+    );
+  write.textContent = "✉️ Dire ce qui manque";
+  write.addEventListener("click", () => {
+    classerFeedback();
+    box.remove();
+  });
+
+  const later = document.createElement("button");
+  later.className = "feedback-later";
+  later.textContent = "Plus tard";
+  later.addEventListener("click", () => {
+    classerFeedback();
+    box.remove();
+  });
+
+  actions.append(write, later);
+  box.appendChild(actions);
+  content.appendChild(box);
 }
 
 // ---- Arrivée depuis un lien ciblé ----
