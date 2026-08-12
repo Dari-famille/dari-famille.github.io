@@ -1561,6 +1561,21 @@ BATCHES.forEach((b, i) => {
   select.appendChild(o);
 });
 
+// Un lien peut désigner le lot à enregistrer :
+//   enregistrement.html?lot=sit-ce-quon-te-dit
+// Chercher le bon thème dans une liste de trente-sept est le premier endroit
+// où l'on abandonne ; autant l'ouvrir directement.
+(function preselection() {
+  try {
+    const voulu = new URLSearchParams(location.search).get("lot");
+    if (!voulu) return;
+    const i = BATCHES.findIndex((b) => b.id === voulu);
+    if (i >= 0) select.value = i;
+  } catch (e) {
+    /* paramètre illisible : on reste sur le premier lot */
+  }
+})();
+
 async function refresh() {
   const keys = await allKeys();
   const total = BATCHES.reduce((n, b) => n + b.items.length, 0);
