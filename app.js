@@ -76,9 +76,32 @@ function speak(arabicText) {
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
-// Certains navigateurs chargent les voix de façon asynchrone
+// Sans voix arabe installée — courant sur Android et sur beaucoup de postes —
+// « Écouter » ne produit rien et le quiz enfant, entièrement fondé sur
+// l'écoute, devient insoluble. On le détecte pour basculer sur un repli lisible
+// plutôt que de laisser l'enfant deviner sans explication.
+let voixArabeDisponible = true;
+
+function verifierVoix() {
+  if (!("speechSynthesis" in window)) {
+    voixArabeDisponible = false;
+    return;
+  }
+  const voix = speechSynthesis.getVoices();
+  // Tant que la liste est vide, le navigateur ne l'a pas encore chargée : on
+  // ne conclut pas à l'absence, sous peine d'un faux négatif au démarrage.
+  if (voix.length === 0) return;
+  voixArabeDisponible = voix.some((v) => (v.lang || "").toLowerCase().startsWith("ar"));
+}
+
+verifierVoix();
 if ("speechSynthesis" in window) {
-  speechSynthesis.onvoiceschanged = () => {};
+  speechSynthesis.onvoiceschanged = () => {
+    const avant = voixArabeDisponible;
+    verifierVoix();
+    // Le rendu doit refléter la découverte tardive d'une voix, ou son absence.
+    if (avant !== voixArabeDisponible) renderContent();
+  };
 }
 
 function currentCategories() {
@@ -431,15 +454,27 @@ function renderKidQuizBody(box) {
 
   const prompt = document.createElement("div");
   prompt.className = "quiz-prompt";
-  prompt.innerHTML = `<span class="quiz-emoji">🔊</span>Écoute et trouve l'image !`;
+  if (voixArabeDisponible) {
+    prompt.innerHTML = `<span class="quiz-emoji">🔊</span>Écoute et trouve l'image !`;
+  } else {
+    // Sans son, la question devient un tirage au sort. On montre le mot :
+    // l'adulte présent le lit à voix haute, et l'exercice garde son sens.
+    prompt.innerHTML =
+      `<span class="quiz-emoji">👀</span>` +
+      `<span class="quiz-mot">${q.latin}</span>` +
+      `<span class="quiz-aide">Lisez le mot à voix haute, ` +
+      `puis laissez l'enfant trouver l'image.</span>`;
+  }
   box.appendChild(prompt);
 
-  const replayBtn = document.createElement("button");
-  replayBtn.className = "quiz-next";
-  replayBtn.style.marginBottom = "18px";
-  replayBtn.textContent = "🔊 Réécouter";
-  replayBtn.addEventListener("click", () => speak(q.arabic));
-  box.appendChild(replayBtn);
+  if (voixArabeDisponible) {
+    const replayBtn = document.createElement("button");
+    replayBtn.className = "quiz-next";
+    replayBtn.style.marginBottom = "18px";
+    replayBtn.textContent = "🔊 Réécouter";
+    replayBtn.addEventListener("click", () => speak(q.arabic));
+    box.appendChild(replayBtn);
+  }
 
   const optionsDiv = document.createElement("div");
   optionsDiv.className = "kid-quiz-grid";
