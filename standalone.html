@@ -142,7 +142,8 @@ body {
   border: 2px solid var(--majorelle);
   background: var(--surface);
   color: var(--majorelle);
-  padding: 8px 18px;
+  min-height: 46px;
+  padding: 10px 18px;
   border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
@@ -179,11 +180,30 @@ body {
   padding: 14px 16px;
 }
 
+@media (max-width: 640px) {
+  .category-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    /* Masque la barre de défilement, qui n'apporte rien ici et mange
+       de la hauteur sur les navigateurs qui la réservent. */
+    scrollbar-width: none;
+    padding-inline: 16px;
+  }
+  .category-nav::-webkit-scrollbar { display: none; }
+  .category-btn {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+}
+
 .category-btn {
   border: none;
   background: var(--surface);
   color: var(--ink);
-  padding: 10px 16px;
+  min-height: 46px;
+  padding: 11px 16px;
   border-radius: 999px;
   font-size: 0.95rem;
   cursor: pointer;
@@ -459,6 +479,8 @@ body {
   border-radius: 999px;
   cursor: pointer;
   font-size: 1rem;
+  min-height: 52px;
+  font-size: 1.05rem;
 }
 
 .section-toggle {
@@ -476,6 +498,8 @@ body {
   border-radius: 999px;
   cursor: pointer;
   box-shadow: var(--shadow);
+  min-height: 44px;
+  padding-inline: 14px;
 }
 
 .section-toggle button.active {
@@ -485,7 +509,7 @@ body {
 
 .app-footer {
   text-align: center;
-  padding: 14px 16px 24px;
+  padding: 14px 16px 96px;
   color: var(--muted);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
@@ -2389,6 +2413,7 @@ const state = {
     // de page ; une série qui monte, si.
     streak: 0,
     bestStreak: 0,
+    autoNext: null, // minuterie d'enchaînement en mode Enfant
   },
   builder: {
     verbId: null,
@@ -2538,11 +2563,13 @@ function renderContent() {
     renderContent();
   });
   const quizBtn = makeToggleBtn("🎯 Quiz", state.section === "quiz", () => {
+    clearTimeout(state.quiz.autoNext);
     state.section = "quiz";
     state.quiz.answered = false;
     renderContent();
   });
   const memoryBtn = makeToggleBtn("🧠 Mémoire", state.section === "memory", () => {
+    clearTimeout(state.quiz.autoNext);
     state.section = "memory";
     buildMemoryDeck();
     renderContent();
@@ -2797,6 +2824,17 @@ function renderKidQuizBody(box) {
       });
       speak(q.arabic);
       nextBtn.style.display = "inline-block";
+      // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant
+      // de quatre ans ne fait pas défiler pour trouver un bouton, il s'arrête.
+      // On enchaîne donc tout seul, après le temps de voir la coche et
+      // d'entendre le mot. L'erreur laisse un instant de plus pour regarder
+      // la bonne réponse. Le bouton reste là pour qui veut aller plus vite.
+      clearTimeout(state.quiz.autoNext);
+      state.quiz.autoNext = setTimeout(() => {
+        if (state.section !== "quiz" || state.mode !== "kid") return;
+        pickNewQuestion();
+        renderContent();
+      }, isCorrect ? 1700 : 2600);
     });
     optionsDiv.appendChild(btn);
   });
@@ -2875,6 +2913,7 @@ function renderAdultQuizBody(box) {
         else if (b2 === btn) b2.classList.add("wrong");
       });
       nextBtn.style.display = "inline-block";
+      nextBtn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     optionsDiv.appendChild(btn);
   });

@@ -36,6 +36,7 @@ const state = {
     // de page ; une série qui monte, si.
     streak: 0,
     bestStreak: 0,
+    autoNext: null, // minuterie d'enchaînement en mode Enfant
   },
   builder: {
     verbId: null,
@@ -185,11 +186,13 @@ function renderContent() {
     renderContent();
   });
   const quizBtn = makeToggleBtn("🎯 Quiz", state.section === "quiz", () => {
+    clearTimeout(state.quiz.autoNext);
     state.section = "quiz";
     state.quiz.answered = false;
     renderContent();
   });
   const memoryBtn = makeToggleBtn("🧠 Mémoire", state.section === "memory", () => {
+    clearTimeout(state.quiz.autoNext);
     state.section = "memory";
     buildMemoryDeck();
     renderContent();
@@ -444,7 +447,17 @@ function renderKidQuizBody(box) {
       });
       speak(q.arabic);
       nextBtn.style.display = "inline-block";
-      nextBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant
+      // de quatre ans ne fait pas défiler pour trouver un bouton, il s'arrête.
+      // On enchaîne donc tout seul, après le temps de voir la coche et
+      // d'entendre le mot. L'erreur laisse un instant de plus pour regarder
+      // la bonne réponse. Le bouton reste là pour qui veut aller plus vite.
+      clearTimeout(state.quiz.autoNext);
+      state.quiz.autoNext = setTimeout(() => {
+        if (state.section !== "quiz" || state.mode !== "kid") return;
+        pickNewQuestion();
+        renderContent();
+      }, isCorrect ? 1700 : 2600);
     });
     optionsDiv.appendChild(btn);
   });
