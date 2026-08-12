@@ -934,3 +934,27 @@ body {
   color: var(--muted);
   line-height: 1.4;
 }
+
+/* Bouton de partage : le produit est familial, il doit pouvoir circuler
+   entre conjoints, frères et sœurs, grands-parents. Placé en pied de page,
+   après l'usage — proposé trop tôt, on partage ce qu'on n'a pas encore jugé. */
+.share-btn {
+  display: block;
+  margin: 0 auto 18px;
+  padding: 13px 22px;
+  border: 2px solid var(--majorelle);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--majorelle);
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  min-height: 48px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, color 0.15s ease;
+}
+.share-btn:hover {
+  transform: translateY(-1px);
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+}

@@ -1011,6 +1011,57 @@ function renderWelcome() {
   document.body.appendChild(overlay);
 }
 
+// ---- Arrivée depuis un lien ciblé ----
+// Une vidéo parle d'une expression précise ; le visiteur qui clique atterrissait
+// sur l'écran d'accueil générique et devait retrouver seul ce qu'il venait de
+// voir. Un paramètre dans l'URL le dépose directement sur la bonne scène :
+//   dari-famille.github.io/?s=compliment-enfant
+function situationDemandee() {
+  try {
+    const id = new URLSearchParams(location.search).get("s");
+    if (!id) return null;
+    return SITUATIONS.find((x) => x.id === id) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ---- Partage ----
+// Le produit s'adresse à des familles : le conjoint, les grands-parents, la
+// sœur qui vit la même chose. Sans bouton pour l'envoyer, la boucle la plus
+// naturelle du produit n'existe pas. L'API de partage ouvre le sélecteur
+// natif du téléphone ; ailleurs on copie le lien.
+function partager() {
+  const url = location.origin + location.pathname;
+  const donnees = {
+    title: "Dari — le darija en famille",
+    text: "Pour que nos enfants parlent avec leurs grands-parents. Gratuit, et ça marche sans connexion.",
+    url,
+  };
+  if (navigator.share) {
+    navigator.share(donnees).catch(() => {});
+    return;
+  }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(
+      () => alert("Lien copié : " + url),
+      () => prompt("Copiez ce lien :", url)
+    );
+    return;
+  }
+  prompt("Copiez ce lien :", url);
+}
+
+function renderShareButton() {
+  const footer = document.querySelector(".app-footer");
+  if (!footer || document.querySelector(".share-btn")) return;
+  const btn = document.createElement("button");
+  btn.className = "share-btn";
+  btn.innerHTML = "💌 Envoyer Dari à quelqu'un";
+  btn.addEventListener("click", partager);
+  footer.insertBefore(btn, footer.firstChild);
+}
+
 // ---- Démarrage ----
 // Le bouton « Enfant » porte la classe active dans le HTML : sans cette
 // synchronisation, un utilisateur revenant en mode adulte verrait l'interface
@@ -1019,10 +1070,23 @@ document.querySelectorAll(".mode-btn").forEach((b) => {
   b.classList.toggle("active", b.dataset.mode === state.mode);
 });
 
+const cible = situationDemandee();
+if (cible) {
+  state.mode = cible.audience === "kid" ? "kid" : "adult";
+  saveMode(state.mode);
+  document.querySelectorAll(".mode-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.mode === state.mode);
+  });
+  state.categoryId = SITUATIONS_ID;
+  state.situationId = cible.id;
+  markWelcomed(); // il sait déjà ce qu'il vient chercher
+}
+
 renderCategoryNav();
 renderContent();
+renderShareButton();
 saveScore();
-if (!alreadyWelcomed()) renderWelcome();
+if (!cible && !alreadyWelcomed()) renderWelcome();
 
 // ---- Invitation à installer ----
 // Sans collecte d'e-mail — impossible tant que le responsable de traitement
