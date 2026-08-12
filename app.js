@@ -444,6 +444,7 @@ function renderKidQuizBody(box) {
       });
       speak(q.arabic);
       nextBtn.style.display = "inline-block";
+      nextBtn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     optionsDiv.appendChild(btn);
   });
@@ -522,6 +523,7 @@ function renderAdultQuizBody(box) {
         else if (b2 === btn) b2.classList.add("wrong");
       });
       nextBtn.style.display = "inline-block";
+      nextBtn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     optionsDiv.appendChild(btn);
   });
