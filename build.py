@@ -18,6 +18,8 @@ SRC = ROOT / "index.html"
 OUT = ROOT / "standalone.html"
 RELECTURE_SRC = ROOT / "relecture-template.html"
 RELECTURE_OUT = ROOT / "relecture.html"
+AUDIO_SRC = ROOT / "enregistrement-template.html"
+AUDIO_OUT = ROOT / "enregistrement.html"
 
 
 def read(name):
@@ -84,6 +86,29 @@ def main():
     print(f"standalone.html régénéré ({len(html) / 1024:.0f} Ko)")
 
     build_relecture()
+    build_enregistrement()
+
+
+def build_enregistrement():
+    """Page d'enregistrement autonome, pour la locutrice native.
+
+    Elle doit tenir en un fichier : ouverte depuis un lien sur téléphone, elle
+    enregistre dans le navigateur et n'a besoin d'aucun serveur.
+    """
+    if not AUDIO_SRC.exists():
+        print("  (pas de enregistrement-template.html, page ignorée)")
+        return
+
+    html = AUDIO_SRC.read_text(encoding="utf-8")
+    for name in ("situations.js", "data.js"):
+        js = read(name)
+        pattern = r'\s*<script src="%s"></script>' % re.escape(name)
+        html, n = re.subn(pattern, "\n<script>\n" + js + "</script>", html, count=1)
+        if n != 1:
+            sys.exit(f"La balise script de {name} est introuvable dans le modèle d'enregistrement")
+
+    AUDIO_OUT.write_text(html, encoding="utf-8")
+    print(f"enregistrement.html régénéré ({len(html) / 1024:.0f} Ko)")
 
 
 def build_relecture():

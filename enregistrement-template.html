@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Dari — enregistrement</title>
+<style>
+  :root {
+    --bg:#f8f0dd; --surface:#fff; --ink:#2a2013; --muted:#7a6d55;
+    --majorelle:#33509e; --emerald:#1f7a5c; --terracotta:#b6502e;
+    --saffron:#d99a2b; --radius:14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161c27; --surface:#202838; --ink:#eee2c8; --muted:#9aa1b5;
+            --majorelle:#8fa8ec; --emerald:#57c99b; --terracotta:#e88c62; --saffron:#f0c369; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; padding:20px 16px 130px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5; max-width:640px; margin-inline:auto;
+  }
+  h1 { font-family:Georgia,serif; color:var(--majorelle); font-size:1.6rem; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:.92rem; margin:0 0 20px; }
+  .howto {
+    background:var(--surface); border-radius:var(--radius); padding:14px 16px;
+    font-size:.9rem; margin-bottom:20px; border-inline-start:4px solid var(--saffron);
+  }
+  .howto p { margin:0 0 8px; } .howto p:last-child { margin:0; }
+  select {
+    width:100%; padding:13px; border-radius:12px; font:inherit; font-size:1rem;
+    border:2px solid color-mix(in srgb,var(--muted) 30%,transparent);
+    background:var(--surface); color:var(--ink); margin-bottom:20px;
+  }
+  .card {
+    background:var(--surface); border-radius:var(--radius); padding:16px;
+    margin-bottom:14px; box-shadow:0 1px 6px rgba(0,0,0,.06);
+  }
+  .card.done { border-inline-start:5px solid var(--emerald); }
+  .fr { color:var(--muted); font-size:.88rem; }
+  .latin { color:var(--terracotta); font-size:1.25rem; font-weight:700; margin:2px 0; }
+  .arabic { font-size:1.5rem; direction:rtl; font-family:"Geeza Pro",serif; }
+  .row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  button {
+    border:none; border-radius:999px; padding:12px 18px; font:inherit;
+    font-weight:600; cursor:pointer; min-height:48px;
+  }
+  .rec { background:var(--terracotta); color:#fff; flex:1; }
+  .rec.on { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity:.6; } }
+  @media (prefers-reduced-motion: reduce) { .rec.on { animation:none; } }
+  .play { background:var(--majorelle); color:#fff; }
+  .again { background:transparent; color:var(--muted);
+           border:2px solid color-mix(in srgb,var(--muted) 30%,transparent); }
+  .bar {
+    position:fixed; inset-inline:0; bottom:0; background:var(--surface);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 14px rgba(0,0,0,.14); display:flex; gap:10px; align-items:center;
+  }
+  .count { flex:1; font-size:.86rem; color:var(--muted); }
+  .export { background:var(--emerald); color:#fff; }
+  .export:disabled { opacity:.4; cursor:default; }
+  .err { color:var(--terracotta); font-size:.85rem; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<h1>🎙️ Dari — enregistrement</h1>
+<p class="sub">Ta voix remplacera la voix robotique de l'app.</p>
+
+<div class="howto">
+  <p><strong>Comment faire :</strong> choisis un thème, puis pour chaque phrase appuie sur <strong>Enregistrer</strong>, dis-la normalement, et appuie sur <strong>Stop</strong>.</p>
+  <p>Tu peux réécouter et refaire autant de fois que tu veux. Parle à ton rythme habituel, comme tu le dirais à quelqu'un — pas besoin d'articuler exagérément.</p>
+  <p>Tout est gardé sur ce téléphone : tu peux t'arrêter et reprendre. À la fin, le bouton vert prépare un fichier à renvoyer.</p>
+</div>
+
+<select id="batch"></select>
+<div id="list"></div>
+
+<div class="bar">
+  <span class="count" id="count"></span>
+  <button class="export" id="export" disabled>Envoyer</button>
+</div>
+
+<script src="situations.js"></script>
+<script src="data.js"></script>
+<script>
+// ---------- Identité stable d'une phrase ----------
+// Le nom du fichier audio doit survivre à une réorganisation du contenu :
+// on le dérive du texte, comme la progression de la relecture.
+function keyOf(item) {
+  const raw = item.fr + "|" + item.latin;
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+  return "k" + (h >>> 0).toString(36);
+}
+
+// ---------- Lots ----------
+// On découpe par thème : personne n'enregistre 338 phrases d'affilée, et un
+// lot qui se termine donne envie d'en faire un autre.
+const BATCHES = [];
+SITUATIONS.forEach((s) => {
+  if (s.refs) return; // le kit de survie ne fait que pointer ailleurs
+  BATCHES.push({ id: "sit-" + s.id, label: s.emoji + " " + s.label, items: s.lines });
+});
+CATEGORIES.forEach((c) => {
+  BATCHES.push({ id: "cat-" + c.id, label: c.emoji + " " + c.label, items: c.items });
+});
+
+// ---------- Stockage ----------
+// Les enregistrements sont des Blob : IndexedDB, pas localStorage.
+let db = null;
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("dari-audio", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("clips");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function put(key, blob) {
+  return new Promise((res, rej) => {
+    const t = db.transaction("clips", "readwrite");
+    t.objectStore("clips").put(blob, key);
+    t.oncomplete = res;
+    t.onerror = () => rej(t.error);
+  });
+}
+function get(key) {
+  return new Promise((res) => {
+    const t = db.transaction("clips", "readonly");
+    const q = t.objectStore("clips").get(key);
+    q.onsuccess = () => res(q.result || null);
+    q.onerror = () => res(null);
+  });
+}
+function allKeys() {
+  return new Promise((res) => {
+    const t = db.transaction("clips", "readonly");
+    const q = t.objectStore("clips").getAllKeys();
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => res([]);
+  });
+}
+
+// ---------- Écriture ZIP sans dépendance ----------
+// L'app n'a aucune dépendance et ce fichier doit pouvoir s'ouvrir seul : on
+// écrit une archive « stored » (sans compression), format le plus simple et
+// parfaitement lisible par le Finder comme par l'Explorateur.
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  files.forEach((f) => {
+    const name = enc.encode(f.name);
+    const crc = crc32(f.data);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(8, 0, true); // stored
+    local.setUint32(14, crc, true);
+    local.setUint32(18, f.data.length, true);
+    local.setUint32(22, f.data.length, true);
+    local.setUint16(26, name.length, true);
+    chunks.push(new Uint8Array(local.buffer), name, f.data);
+
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true);
+    cen.setUint16(4, 20, true);
+    cen.setUint16(6, 20, true);
+    cen.setUint16(10, 0, true);
+    cen.setUint32(16, crc, true);
+    cen.setUint32(20, f.data.length, true);
+    cen.setUint32(24, f.data.length, true);
+    cen.setUint16(28, name.length, true);
+    cen.setUint32(42, offset, true);
+    central.push(new Uint8Array(cen.buffer), name);
+    offset += 30 + name.length + f.data.length;
+  });
+  const centralSize = central.reduce((n, c) => n + c.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: "application/zip" });
+}
+
+// ---------- Enregistrement ----------
+let stream = null;
+let recorder = null;
+let currentKey = null;
+
+async function ensureMic() {
+  if (stream) return stream;
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  return stream;
+}
+
+function pickMime() {
+  // Safari ne produit que du mp4, Chrome du webm : on retient ce que le
+  // navigateur accepte réellement plutôt que d'imposer un format.
+  const candidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+  for (const m of candidates) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return "";
+}
+
+// ---------- Interface ----------
+const select = document.getElementById("batch");
+const list = document.getElementById("list");
+const countEl = document.getElementById("count");
+const exportBtn = document.getElementById("export");
+
+BATCHES.forEach((b, i) => {
+  const o = document.createElement("option");
+  o.value = i;
+  o.textContent = b.label + " (" + b.items.length + ")";
+  select.appendChild(o);
+});
+
+async function refresh() {
+  const keys = await allKeys();
+  const total = BATCHES.reduce((n, b) => n + b.items.length, 0);
+  countEl.textContent = keys.length + " / " + total + " enregistrées";
+  exportBtn.disabled = keys.length === 0;
+}
+
+async function renderBatch() {
+  const batch = BATCHES[select.value];
+  list.innerHTML = "";
+  for (const item of batch.items) {
+    const key = keyOf(item);
+    const existing = await get(key);
+
+    const card = document.createElement("div");
+    card.className = "card" + (existing ? " done" : "");
+    card.innerHTML =
+      '<div class="fr">' + item.fr + "</div>" +
+      '<div class="latin">' + item.latin + "</div>" +
+      '<div class="arabic">' + item.arabic + "</div>";
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const rec = document.createElement("button");
+    rec.className = "rec";
+    rec.textContent = existing ? "🎙️ Refaire" : "🎙️ Enregistrer";
+
+    const play = document.createElement("button");
+    play.className = "play";
+    play.textContent = "▶︎";
+    play.style.display = existing ? "" : "none";
+
+    const err = document.createElement("p");
+    err.className = "err";
+
+    rec.onclick = async () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        return;
+      }
+      try {
+        await ensureMic();
+      } catch (e) {
+        err.textContent = "Micro refusé. Autorise le micro dans les réglages du navigateur.";
+        return;
+      }
+      const mime = pickMime();
+      recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const parts = [];
+      currentKey = key;
+      recorder.ondataavailable = (e) => e.data.size && parts.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(parts, { type: recorder.mimeType || "audio/mp4" });
+        await put(key, blob);
+        rec.classList.remove("on");
+        rec.textContent = "🎙️ Refaire";
+        play.style.display = "";
+        card.classList.add("done");
+        refresh();
+      };
+      recorder.start();
+      rec.classList.add("on");
+      rec.textContent = "⏹ Stop";
+    };
+
+    play.onclick = async () => {
+      const blob = await get(key);
+      if (!blob) return;
+      const a = new Audio(URL.createObjectURL(blob));
+      a.play();
+    };
+
+    row.append(rec, play);
+    card.append(row, err);
+    list.appendChild(card);
+  }
+}
+
+exportBtn.onclick = async () => {
+  exportBtn.textContent = "Préparation…";
+  const keys = await allKeys();
+  const files = [];
+  // On joint un index texte : sans lui, impossible de savoir quelle phrase
+  // correspond à quel fichier une fois l'archive ouverte.
+  let index = "Enregistrements Dari\n\n";
+  const byKey = {};
+  BATCHES.forEach((b) => b.items.forEach((it) => (byKey[keyOf(it)] = { it, b })));
+  for (const key of keys) {
+    const blob = await get(key);
+    if (!blob) continue;
+    const ext = (blob.type || "").includes("webm") ? "webm" : "m4a";
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    files.push({ name: key + "." + ext, data: buf });
+    const meta = byKey[key];
+    index += key + "." + ext + "  →  " + (meta ? meta.it.latin + "  (" + meta.it.fr + ")" : "?") + "\n";
+  }
+  files.push({ name: "index.txt", data: new TextEncoder().encode(index) });
+
+  const zip = makeZip(files);
+  const url = URL.createObjectURL(zip);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dari-audio.zip";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  exportBtn.textContent = "Envoyer";
+};
+
+select.onchange = renderBatch;
+
+openDB().then((d) => {
+  db = d;
+  renderBatch();
+  refresh();
+});
+</script>
+</body>
+</html>

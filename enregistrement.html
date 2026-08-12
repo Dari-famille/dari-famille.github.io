@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Dari — enregistrement</title>
+<style>
+  :root {
+    --bg:#f8f0dd; --surface:#fff; --ink:#2a2013; --muted:#7a6d55;
+    --majorelle:#33509e; --emerald:#1f7a5c; --terracotta:#b6502e;
+    --saffron:#d99a2b; --radius:14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161c27; --surface:#202838; --ink:#eee2c8; --muted:#9aa1b5;
+            --majorelle:#8fa8ec; --emerald:#57c99b; --terracotta:#e88c62; --saffron:#f0c369; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; padding:20px 16px 130px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5; max-width:640px; margin-inline:auto;
+  }
+  h1 { font-family:Georgia,serif; color:var(--majorelle); font-size:1.6rem; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:.92rem; margin:0 0 20px; }
+  .howto {
+    background:var(--surface); border-radius:var(--radius); padding:14px 16px;
+    font-size:.9rem; margin-bottom:20px; border-inline-start:4px solid var(--saffron);
+  }
+  .howto p { margin:0 0 8px; } .howto p:last-child { margin:0; }
+  select {
+    width:100%; padding:13px; border-radius:12px; font:inherit; font-size:1rem;
+    border:2px solid color-mix(in srgb,var(--muted) 30%,transparent);
+    background:var(--surface); color:var(--ink); margin-bottom:20px;
+  }
+  .card {
+    background:var(--surface); border-radius:var(--radius); padding:16px;
+    margin-bottom:14px; box-shadow:0 1px 6px rgba(0,0,0,.06);
+  }
+  .card.done { border-inline-start:5px solid var(--emerald); }
+  .fr { color:var(--muted); font-size:.88rem; }
+  .latin { color:var(--terracotta); font-size:1.25rem; font-weight:700; margin:2px 0; }
+  .arabic { font-size:1.5rem; direction:rtl; font-family:"Geeza Pro",serif; }
+  .row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  button {
+    border:none; border-radius:999px; padding:12px 18px; font:inherit;
+    font-weight:600; cursor:pointer; min-height:48px;
+  }
+  .rec { background:var(--terracotta); color:#fff; flex:1; }
+  .rec.on { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity:.6; } }
+  @media (prefers-reduced-motion: reduce) { .rec.on { animation:none; } }
+  .play { background:var(--majorelle); color:#fff; }
+  .again { background:transparent; color:var(--muted);
+           border:2px solid color-mix(in srgb,var(--muted) 30%,transparent); }
+  .bar {
+    position:fixed; inset-inline:0; bottom:0; background:var(--surface);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 14px rgba(0,0,0,.14); display:flex; gap:10px; align-items:center;
+  }
+  .count { flex:1; font-size:.86rem; color:var(--muted); }
+  .export { background:var(--emerald); color:#fff; }
+  .export:disabled { opacity:.4; cursor:default; }
+  .err { color:var(--terracotta); font-size:.85rem; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<h1>🎙️ Dari — enregistrement</h1>
+<p class="sub">Ta voix remplacera la voix robotique de l'app.</p>
+
+<div class="howto">
+  <p><strong>Comment faire :</strong> choisis un thème, puis pour chaque phrase appuie sur <strong>Enregistrer</strong>, dis-la normalement, et appuie sur <strong>Stop</strong>.</p>
+  <p>Tu peux réécouter et refaire autant de fois que tu veux. Parle à ton rythme habituel, comme tu le dirais à quelqu'un — pas besoin d'articuler exagérément.</p>
+  <p>Tout est gardé sur ce téléphone : tu peux t'arrêter et reprendre. À la fin, le bouton vert prépare un fichier à renvoyer.</p>
+</div>
+
+<select id="batch"></select>
+<div id="list"></div>
+
+<div class="bar">
+  <span class="count" id="count"></span>
+  <button class="export" id="export" disabled>Envoyer</button>
+</div>
+<script>
+// Situations réelles — le cœur du mode Adulte.
+//
+// Les catégories de data.js apprennent des mots ; ce fichier apprend à s'en
+// sortir dans un moment précis. La différence tient surtout aux `note` : la
+// plupart des maladresses d'un conjoint français ne viennent pas d'une faute
+// de vocabulaire mais d'une convention qu'on ne lui a jamais expliquée.
+//
+// `check: true` signale une formulation à faire valider par un locuteur natif
+// avant diffusion — variante régionale possible, ou nuance dont je ne suis pas
+// certain. Le mode Relecture (voir relecture dans app.js) ne liste que celles-là.
+
+const SITUATIONS = [
+  {
+    id: "arrivee",
+    label: "Arriver chez les grands-parents",
+    emoji: "🏡",
+    audience: "adult",
+    free: true, // situation vitrine : accessible sans achat
+    intro:
+      "Les dix premières minutes donnent le ton du séjour. Personne n'attend " +
+      "que vous parliez bien — on attend que vous essayiez.",
+    lines: [
+      {
+        fr: "Bonjour à vous (salutation respectueuse)",
+        latin: "Salam 3alikoum",
+        arabic: "السلام عليكم",
+        note:
+          "La salutation par défaut en entrant quelque part. On répond " +
+          "« wa 3alikoum salam ». Convient à tout âge et à tout contexte.",
+      },
+      {
+        fr: "Comment allez-vous ?",
+        latin: "Kif dayer ? (à un homme) / Kif dayra ? (à une femme)",
+        arabic: "كيف داير؟ / كيف دايرة؟",
+        note:
+          "L'accord se fait sur la personne à qui vous parlez, pas sur vous. " +
+          "On entend aussi « kidayer », contracté — c'est le même mot.",
+      },
+      {
+        fr: "Ça va, Dieu merci",
+        latin: "Lhamdulillah",
+        arabic: "الحمد لله",
+        note:
+          "La réponse attendue, même si la journée a été mauvaise. Répondre " +
+          "seulement « ça va » sans « lhamdulillah » sonne sec.",
+      },
+      {
+        fr: "Je suis heureux d'être ici",
+        latin: "Ana ferhan bach ana hna",
+        arabic: "أنا فرحان باش أنا هنا",
+        check: true,
+        note:
+          "Femme : « ferhana ». Correction native reçue mais tronquée " +
+          "(« Ana fer… ») — à redemander avant publication.",
+      },
+      {
+        fr: "Votre maison est très belle",
+        latin: "Dar dyalkoum zwina bezzaf",
+        arabic: "الدار ديالكم زوينة بزاف",
+        note: "Compliment sûr et toujours bien reçu en arrivant.",
+      },
+      {
+        fr: "Que Dieu te préserve (merci chaleureux)",
+        latin: "Allah ykhlik",
+        arabic: "الله يخليك",
+        note:
+          "Bien plus chaleureux que « choukran » seul. S'emploie pour " +
+          "remercier quelqu'un qui vous rend service ou vous accueille.",
+      },
+    ],
+  },
+
+  {
+    id: "compliment-enfant",
+    label: "Complimenter un enfant",
+    emoji: "🧒",
+    audience: "adult",
+    free: true,
+    intro:
+      "La situation où un conjoint français se trompe le plus souvent, sans " +
+      "jamais comprendre pourquoi l'ambiance se refroidit.",
+    lines: [
+      {
+        fr: "Qu'il est beau ! (avec la formule protectrice)",
+        latin: "Tbarkallah 3lih !",
+        arabic: "تبارك الله عليه",
+        note:
+          "LA règle à retenir. Complimenter un enfant — sa beauté, sa santé, " +
+          "son intelligence — sans ajouter « tbarkallah » est perçu comme " +
+          "attirer le mauvais œil sur lui. Ce n'est pas une superstition " +
+          "marginale : l'omission se remarque et met mal à l'aise. Pour une " +
+          "fille : « tbarkallah 3liha ».",
+      },
+      {
+        fr: "Que Dieu le garde",
+        latin: "Allah yhefdo",
+        arabic: "الله يحفظو",
+        note: "Fille : « Allah yhefdha ». Se dit souvent juste après tbarkallah.",
+      },
+      {
+        fr: "Il a beaucoup grandi",
+        latin: "Kber bezzaf",
+        arabic: "كبر بزاف",
+        note: "Fille : « kebrat bezzaf ». À faire confirmer.",
+      },
+      {
+        fr: "C'est le portrait de sa mère",
+        latin: "Kayechbeh mamah",
+        arabic: "كيشبه ماماه",
+        note: "Pour une fille : « katechbeh mamaha ».",
+      },
+    ],
+  },
+
+  {
+    id: "a-table",
+    label: "À table",
+    emoji: "🍽️",
+    audience: "adult",
+    free: false,
+    intro:
+      "On vous resservira. Plusieurs fois. Savoir refuser sans vexer est plus " +
+      "utile que tout le vocabulaire des aliments.",
+    lines: [
+      {
+        fr: "Que Dieu te donne la santé (merci pour le repas)",
+        latin: "Allah y3tik saha",
+        arabic: "الله يعطيك الصحة",
+        note:
+          "À dire à la personne qui a cuisiné, souvent la belle-mère. C'est " +
+          "le remerciement attendu — « choukran » seul paraît tiède ici.",
+      },
+      {
+        fr: "C'est délicieux",
+        latin: "Ldid bezzaf",
+        arabic: "لذيذ بزاف",
+        note: "Dites-le tôt et à voix haute. Le silence est lu comme une réserve.",
+      },
+      {
+        fr: "Un peu seulement, s'il te plaît",
+        latin: "Chwiya safi, 3afak",
+        arabic: "شوية صافي، عافاك",
+        note:
+          "Refuser franchement passe mal ; demander « un peu » est la sortie " +
+          "polie. Attendez-vous à être resservi malgré tout.",
+      },
+      {
+        fr: "Je n'ai plus faim, merci",
+        latin: "Chba3t, Allah y3tik saha",
+        arabic: "شبعت، الله يعطيك الصحة",
+        note:
+          "« Chba3t » (je suis rassasié) est un compliment déguisé : il dit " +
+          "qu'il y avait largement assez. C'est le bon refus.",
+      },
+      {
+        fr: "Ça suffit, merci",
+        latin: "Baraka 3liya, choukran",
+        arabic: "بركا عليا، شكرا",
+        note:
+          "Plus ferme que « chwiya safi » : à garder pour le troisième " +
+          "refus, quand on vous ressert malgré tout.",
+      },
+    ],
+  },
+
+  {
+    id: "enfant-besoins",
+    label: "Mon enfant a besoin de quelque chose",
+    kidLabel: "J'ai besoin de quelque chose",
+    emoji: "🆘",
+    audience: "both",
+    free: true,
+    intro:
+      "Les phrases à connaître le jour où votre enfant est seul avec ses " +
+      "grands-parents et que vous n'êtes pas dans la pièce.",
+    kidIntro: "Pour demander ce dont tu as besoin, tout seul.",
+    lines: [
+      {
+        fr: "J'ai faim",
+        latin: "Fiya jou3",
+        arabic: "فيا الجوع",
+        kid: true,
+        note: "On entend aussi « jou3an » (garçon) / « jou3ana » (fille).",
+      },
+      {
+        fr: "J'ai soif",
+        latin: "Fiya l3tach",
+        arabic: "فيا العطش",
+        kid: true,
+        note: "Variante : « 3tchan » / « 3tchana ».",
+      },
+      {
+        fr: "Je veux de l'eau",
+        latin: "Bghit lma",
+        arabic: "بغيت الما",
+        kid: true,
+        note: "La phrase la plus utile de toute l'app pour un jeune enfant.",
+      },
+      {
+        fr: "J'ai mal ici",
+        latin: "Kaydrni hna",
+        arabic: "كيضرني هنا",
+        kid: true,
+        note:
+          "En montrant l'endroit du doigt. Suffit à se faire comprendre de " +
+          "n'importe qui.",
+      },
+      {
+        fr: "Je veux aller aux toilettes",
+        latin: "Bghit nmchi l toilette",
+        arabic: "بغيت نمشي للتواليت",
+        kid: true,
+        note: "« Toilette » se dit tel quel, l'emprunt au français est courant.",
+      },
+      {
+        fr: "Où est maman ?",
+        latin: "Fin mama ?",
+        arabic: "فين ماما؟",
+        kid: true,
+      },
+      {
+        fr: "Je veux dormir",
+        latin: "Bghit n3es",
+        arabic: "بغيت نعس",
+        kid: true,
+      },
+    ],
+  },
+
+  {
+    id: "jouer-cousins",
+    label: "Jouer avec les cousins",
+    emoji: "⚽",
+    audience: "kid",
+    free: true,
+    intro: "De quoi entrer dans un jeu déjà commencé.",
+    lines: [
+      {
+        fr: "Je peux jouer avec vous ?",
+        latin: "Ymken nel3ab m3akoum ?",
+        arabic: "يمكن نلعب معاكم؟",
+        kid: true,
+        check: true,
+      },
+      {
+        fr: "À toi !",
+        latin: "Noubtek !",
+        arabic: "نوبتك",
+        kid: true,
+        note: "De « nouba », le tour de quelqu'un.",
+      },
+      {
+        fr: "Attends-moi !",
+        latin: "Tsenani !",
+        arabic: "تسناني",
+        kid: true,
+      },
+      {
+        fr: "C'est mon tour",
+        latin: "Noubti",
+        arabic: "نوبتي",
+        kid: true,
+      },
+      {
+        fr: "On y va !",
+        latin: "Yallah !",
+        arabic: "يالله",
+        kid: true,
+        note: "Le mot à tout faire : « allez », « on y va », « viens ».",
+      },
+      {
+        fr: "Bravo !",
+        latin: "Bravo ! / Mzyan !",
+        arabic: "مزيان",
+        kid: true,
+        note: "« Bravo » se dit aussi tel quel, emprunté au français.",
+      },
+    ],
+  },
+
+  {
+    id: "ce-quon-te-dit",
+    label: "Ce que votre enfant va entendre",
+    kidLabel: "Ce que mamie va te dire",
+    emoji: "👵",
+    audience: "both",
+    free: true,
+    intro:
+      "Toutes les autres pages apprennent à parler. Celle-ci apprend à " +
+      "comprendre — et c'est l'inverse du vrai besoin d'un enfant. Personne " +
+      "n'attend de lui qu'il fasse des phrases : on attend qu'il réagisse " +
+      "quand on lui parle. Ce sont les mots qu'il va entendre vingt fois par " +
+      "jour, adressés à lui.",
+    lines: [
+      {
+        fr: "Viens !",
+        latin: "Aji !",
+        arabic: "أجي",
+        kid: true,
+        note:
+          "Le mot numéro un. Une grand-mère qui appelle un enfant dit « aji », " +
+          "pas autre chose. À reconnaître avant tous les autres.",
+      },
+      {
+        fr: "Mange !",
+        latin: "Kul !",
+        arabic: "كول",
+        kid: true,
+      },
+      {
+        fr: "Bois !",
+        latin: "Chreb !",
+        arabic: "شرب",
+        kid: true,
+      },
+      {
+        fr: "Assieds-toi",
+        latin: "Gles !",
+        arabic: "كلس",
+        kid: true,
+      },
+      {
+        fr: "Lève-toi",
+        latin: "Noud !",
+        arabic: "نوض",
+        kid: true,
+      },
+      {
+        fr: "Regarde !",
+        latin: "Chouf !",
+        arabic: "شوف",
+        kid: true,
+      },
+      {
+        fr: "Écoute !",
+        latin: "Sme3 !",
+        arabic: "سمع",
+        kid: true,
+      },
+      {
+        fr: "Encore / continue",
+        latin: "Zid !",
+        arabic: "زيد",
+        kid: true,
+        note: "S'entend surtout à table, quand on veut vous resservir.",
+      },
+      {
+        fr: "Ça suffit / arrête",
+        latin: "Baraka !",
+        arabic: "بركا",
+        kid: true,
+      },
+      {
+        fr: "Donne-moi",
+        latin: "3tini",
+        arabic: "عطيني",
+        kid: true,
+      },
+      {
+        fr: "Tu veux… ?",
+        latin: "Bghiti… ?",
+        arabic: "بغيتي؟",
+        kid: true,
+        note:
+          "La question la plus fréquente adressée à un enfant. Savoir répondre " +
+          "« iyeh » (oui) ou « la, choukran » (non merci) suffit à tenir " +
+          "l'échange.",
+      },
+      {
+        fr: "Tu as assez mangé ?",
+        latin: "Chba3ti ?",
+        arabic: "شبعتي؟",
+        kid: true,
+      },
+      {
+        fr: "Comment tu t'appelles ?",
+        latin: "Chnou smitek ?",
+        arabic: "شنو سميتك؟",
+        kid: true,
+      },
+      {
+        fr: "D'accord ?",
+        latin: "Wakha ?",
+        arabic: "وخا؟",
+        kid: true,
+        note: "Se répond par le même mot : « wakha ».",
+      },
+    ],
+  },
+
+  {
+    id: "mots-partout",
+    label: "Les mots qui reviennent sans cesse",
+    emoji: "🔁",
+    audience: "adult",
+    free: true,
+    intro:
+      "Une dizaine de mots occupent une grosse part de tout ce qui se dit. " +
+      "Aucun ne se traduit proprement, et aucune liste de vocabulaire ne les " +
+      "enseigne — mais les connaître fait la différence entre suivre une " +
+      "conversation et la regarder passer.",
+    lines: [
+      {
+        fr: "D'accord / OK",
+        latin: "Wakha",
+        arabic: "وخا",
+        note:
+          "Le mot le plus utile du darija. Accord, acceptation, « bon, " +
+          "d'accord » résigné : tout passe par lui.",
+      },
+      {
+        fr: "C'est bon / ça suffit / terminé",
+        latin: "Safi",
+        arabic: "صافي",
+        note:
+          "Sert à clore n'importe quoi : une discussion, un repas, une " +
+          "dispute d'enfants. « Safi ! » et on passe à autre chose.",
+      },
+      {
+        fr: "Allez / on y va / viens",
+        latin: "Yallah",
+        arabic: "يالله",
+        note: "Départ, encouragement, impatience — le contexte fait le sens.",
+      },
+      {
+        fr: "Beaucoup / trop",
+        latin: "Bezzaf",
+        arabic: "بزاف",
+        note: "Se place après le mot : « zwin bezzaf » = très beau.",
+      },
+      {
+        fr: "Un peu",
+        latin: "Chwiya",
+        arabic: "شوية",
+        note: "L'inverse de bezzaf, et l'arme absolue pour refuser poliment.",
+      },
+      {
+        fr: "Maintenant",
+        latin: "Daba",
+        arabic: "دابا",
+      },
+      {
+        fr: "Bien / bon",
+        latin: "Mzyan",
+        arabic: "مزيان",
+        note: "Vaut aussi bien pour un plat que pour une personne ou une nouvelle.",
+      },
+      {
+        fr: "Rien",
+        latin: "Walou",
+        arabic: "والو",
+      },
+      {
+        fr: "Petit à petit",
+        latin: "Chwiya b chwiya",
+        arabic: "شوية بشوية",
+        note:
+          "Ce qu'on vous répondra quand vous vous excuserez de mal parler. " +
+          "C'est un encouragement, pas une critique.",
+      },
+      {
+        fr: "Au nom de Dieu (avant de commencer)",
+        latin: "Bismillah",
+        arabic: "بسم الله",
+        note:
+          "Se dit avant de manger, de monter en voiture, de commencer quelque " +
+          "chose. Le dire avant le premier bouchon se remarque, en bien.",
+      },
+      {
+        fr: "Si Dieu le veut",
+        latin: "Inchallah",
+        arabic: "إن شاء الله",
+        note:
+          "Accompagne toute projection future. Attention : peut aussi vouloir " +
+          "dire un « non » poli qu'on n'assume pas. Le ton fait la différence.",
+      },
+      {
+        fr: "Dieu merci",
+        latin: "Lhamdulillah",
+        arabic: "الحمد لله",
+        note:
+          "Réponse par défaut à « comment ça va ? », et ponctuation de toute " +
+          "bonne nouvelle.",
+      },
+    ],
+  },
+
+  {
+    id: "je-comprends-pas",
+    label: "Je ne comprends pas",
+    kidLabel: "Je n'ai pas compris",
+    emoji: "🤷",
+    audience: "both",
+    free: true,
+    intro:
+      "Les phrases les plus rentables de toute l'app. Elles ne servent pas à " +
+      "parler darija — elles servent à tenir dans une conversation qu'on ne " +
+      "suit pas, et à faire ralentir les autres sans les vexer.",
+    lines: [
+      {
+        fr: "Je ne parle pas bien le darija",
+        latin: "Ma kanhdarch mzyan darija",
+        arabic: "ما كنهضرش مزيان دارجة",
+        kid: true,
+        check: true,
+        note:
+          "À dire d'entrée. Elle désamorce tout : les gens ralentissent " +
+          "d'eux-mêmes et apprécient l'effort au lieu de juger le niveau.",
+      },
+      {
+        fr: "Je suis en train d'apprendre",
+        latin: "Kant3allem",
+        arabic: "كنتعلم",
+        kid: true,
+        note: "Change complètement le regard : vous n'êtes plus un touriste.",
+      },
+      {
+        fr: "Je n'ai pas compris",
+        latin: "Ma fhemtch",
+        arabic: "ما فهمتش",
+        kid: true,
+      },
+      {
+        fr: "Répète, s'il te plaît",
+        latin: "3awed 3afak",
+        arabic: "عاود عافاك",
+        kid: true,
+      },
+      {
+        fr: "Doucement, s'il te plaît",
+        latin: "Bchwiya 3afak",
+        arabic: "بشوية عافاك",
+        kid: true,
+        note: "Plus efficace que « répète » : le problème est le débit, pas le mot.",
+      },
+      {
+        fr: "Comment on dit ça ?",
+        latin: "Kifach kaygoulou hadchi ?",
+        arabic: "كيفاش كيقولو هادشي؟",
+        note:
+          "La question qui fait basculer une conversation en leçon. Les gens " +
+          "adorent qu'on leur demande.",
+      },
+      {
+        fr: "Qu'est-ce que ça veut dire ?",
+        latin: "Achno kat3ni ?",
+        arabic: "أشنو كتعني؟",
+        check: true,
+      },
+    ],
+  },
+
+  {
+    id: "telephone",
+    label: "Au téléphone avec les grands-parents",
+    kidLabel: "Au téléphone avec papi et mamie",
+    emoji: "📞",
+    audience: "both",
+    free: false,
+    intro:
+      "Entre deux séjours, c'est le seul lien qui reste. Un appel de trois " +
+      "minutes où l'enfant dit quatre phrases vaut plus qu'une semaine de " +
+      "vocabulaire.",
+    lines: [
+      {
+        fr: "Allô, c'est moi",
+        latin: "Allo, ana",
+        arabic: "ألو، أنا",
+        kid: true,
+      },
+      {
+        fr: "Tu m'entends ?",
+        latin: "Katsem3ni ?",
+        arabic: "كتسمعني؟",
+        kid: true,
+        note: "À un homme : « katsem3ni », à une femme : « katsem3ini ».",
+      },
+      {
+        fr: "Tu me manques",
+        latin: "Twahachtek",
+        arabic: "توحشتك",
+        kid: true,
+        note:
+          "Le mot le plus important de cette page. « Twahachtek » est bien " +
+          "plus chargé que « tu me manques » en français — c'est le mot des " +
+          "gens qu'on ne voit qu'une fois par an. Un enfant qui le dit à sa " +
+          "grand-mère au téléphone, c'est le moment que vous cherchez.",
+      },
+      {
+        fr: "Comment vas-tu, mamie ?",
+        latin: "Kif dayra, jeddati ?",
+        arabic: "كيف دايرة، جدتي؟",
+        kid: true,
+      },
+      {
+        fr: "Pour raccrocher",
+        latin: "Bslama",
+        arabic: "بسلامة",
+        kid: true,
+        check: true,
+        note:
+          "« Je t'embrasse » ne se traduit pas : la formule n'existe pas pour " +
+          "clore un appel. On dit simplement « bslama ». Traduire mot à mot " +
+          "donnerait « kanbousek », qui sonne étrange à l'oreille marocaine. " +
+          "(Transcription à confirmer : « bslama » ou « bseslama ».)",
+      },
+      {
+        fr: "On vient bientôt",
+        latin: "Ghadi njiw qriban, inchallah",
+        arabic: "غادي نجيو قريبا، إن شاء الله",
+        check: true,
+      },
+      {
+        fr: "Passe-moi mamie",
+        latin: "3tini jeddati, 3afak",
+        arabic: "عطيني جدتي، عافاك",
+        kid: true,
+        check: true,
+      },
+    ],
+  },
+
+  {
+    id: "occasions",
+    label: "Fêtes et grandes occasions",
+    emoji: "🎉",
+    audience: "adult",
+    free: false,
+    intro:
+      "Les moments où le silence se remarque le plus. Chaque occasion a sa " +
+      "formule, et il en existe une pour presque tout.",
+    lines: [
+      {
+        fr: "Joyeuse fête (Aïd)",
+        latin: "3id moubarak sa3id",
+        arabic: "عيد مبارك سعيد",
+        note: "La formule de l'Aïd, à dire à tout le monde, y compris aux voisins.",
+      },
+      {
+        fr: "Félicitations",
+        latin: "Mabrouk",
+        arabic: "مبروك",
+        note:
+          "S'emploie très largement : mariage, naissance, réussite, achat " +
+          "d'une voiture, nouvelle maison.",
+      },
+      {
+        fr: "Que Dieu te bénisse (réponse à « mabrouk »)",
+        latin: "Allah ybarek fik",
+        arabic: "الله يبارك فيك",
+        note:
+          "La réponse attendue quand on vous félicite. Ne pas répondre laisse " +
+          "un blanc gênant.",
+      },
+      {
+        fr: "À ta santé (vêtement neuf, coupe de cheveux, sortie de bain)",
+        latin: "Bsaha",
+        arabic: "بالصحة",
+        note:
+          "Surprenant pour un Français : on félicite quelqu'un qui sort du " +
+          "hammam, qui étrenne des habits ou qui vient de se faire couper les " +
+          "cheveux. Ne pas le dire passe pour de l'indifférence. Réponse : " +
+          "« Allah y3tik saha ».",
+      },
+      {
+        fr: "Que Dieu ait son âme (condoléances)",
+        latin: "Allah yrahmo",
+        arabic: "الله يرحمو",
+        note:
+          "Pour une femme : « Allah yrahmha ». À dire simplement, sans " +
+          "chercher à en faire plus — la sobriété est de mise.",
+      },
+      {
+        fr: "Que Dieu vous donne la patience",
+        latin: "Allah y3tikoum sber",
+        arabic: "الله يعطيكم الصبر",
+        note: "S'adresse à la famille endeuillée.",
+      },
+    ],
+  },
+
+  {
+    id: "sante",
+    label: "Chez le médecin ou à la pharmacie",
+    emoji: "🩺",
+    audience: "adult",
+    free: false,
+    intro:
+      "À préparer avant d'en avoir besoin. Le jour où ça arrive, on n'a pas " +
+      "le temps de chercher ses mots.",
+    lines: [
+      {
+        fr: "Mon fils a de la fièvre",
+        latin: "Weldi fih skhana",
+        arabic: "ولدي فيه سخانة",
+        note:
+          "Pour une fille : « bnti fiha skhana ». On dit « fih » (il y a en " +
+          "lui) plutôt que « 3endo » (il a), comme pour la faim et la soif.",
+      },
+      {
+        fr: "Il a mal au ventre",
+        latin: "Kadrou kerchou",
+        arabic: "كضرو كرشو",
+      },
+      {
+        fr: "Depuis hier",
+        latin: "Men lbareh",
+        arabic: "من البارح",
+      },
+      {
+        fr: "Il est allergique",
+        latin: "3endo hasasiya",
+        arabic: "عندو حساسية",
+        check: true,
+      },
+      {
+        fr: "Où est la pharmacie ?",
+        latin: "Fin l farmasyan ?",
+        arabic: "فين الفارماسيان؟",
+        note: "Le mot est emprunté au français, il est compris partout.",
+      },
+      {
+        fr: "Il faut un médecin",
+        latin: "Khassna tbib",
+        arabic: "خاصنا طبيب",
+      },
+    ],
+  },
+
+  {
+    id: "prendre-conge",
+    label: "Prendre congé",
+    emoji: "👋",
+    audience: "adult",
+    free: false,
+    intro:
+      "Partir trop vite est impoli ; annoncer son départ à l'avance et " +
+      "remercier longuement fait partie du rituel.",
+    lines: [
+      {
+        fr: "Il faut qu'on y aille",
+        latin: "Khassna nemchiw",
+        arabic: "خاصنا نمشيو",
+        check: true,
+      },
+      {
+        fr: "Merci pour tout",
+        latin: "Choukran 3la kolchi",
+        arabic: "شكرا على كلشي",
+      },
+      {
+        fr: "On s'est régalés",
+        latin: "Frahna bezzaf",
+        arabic: "فرحنا بزاف",
+        check: true,
+        note: "Littéralement « nous nous sommes réjouis ». À faire valider.",
+      },
+      {
+        fr: "À bientôt, si Dieu le veut",
+        latin: "Nchoufkoum qriban, inchallah",
+        arabic: "نشوفكم قريبا، إن شاء الله",
+        note:
+          "« Inchallah » accompagne toute projection dans le futur. L'omettre " +
+          "en annonçant un revoir sonne étrangement catégorique.",
+      },
+      {
+        fr: "Que Dieu vous garde",
+        latin: "Allah yhefdkoum",
+        arabic: "الله يحفظكم",
+        note: "Formule d'au revoir chaleureuse, adressée à toute la maisonnée.",
+      },
+    ],
+  },
+];
+
+// ---- Kit de survie ----
+// Les dix phrases qui permettent de tenir une semaine entière. Elles existent
+// déjà ailleurs : on les référence au lieu de les recopier, pour qu'une
+// correction de la relectrice se propage partout au lieu de laisser traîner
+// une vieille version dans ce raccourci.
+const SURVIVAL_KIT = {
+  id: "kit-survie",
+  label: "Les 10 qui te sauvent la vie",
+  emoji: "🛟",
+  audience: "adult",
+  free: true,
+  intro:
+    "Si vous n'apprenez que dix choses avant de partir, apprenez celles-ci. " +
+    "Elles ne vous feront pas parler darija — elles vous feront tenir une " +
+    "semaine sans jamais être bloqué ni passer pour indifférent.",
+  refs: [
+    ["arrivee", "Bonjour à vous (salutation respectueuse)"],
+    ["arrivee", "Que Dieu te préserve (merci chaleureux)"],
+    ["je-comprends-pas", "Je ne parle pas bien le darija"],
+    ["je-comprends-pas", "Je n'ai pas compris"],
+    ["je-comprends-pas", "Doucement, s'il te plaît"],
+    ["mots-partout", "D'accord / OK"],
+    ["mots-partout", "Un peu"],
+    ["a-table", "Que Dieu te donne la santé (merci pour le repas)"],
+    ["a-table", "Je n'ai plus faim, merci"],
+    ["compliment-enfant", "Qu'il est beau ! (avec la formule protectrice)"],
+  ],
+};
+
+// Résout les références en vraies lignes et place le kit en tête de liste.
+// Une référence cassée (phrase renommée) est signalée en console plutôt que
+// d'échouer en silence et de produire un kit incomplet.
+(function buildSurvivalKit() {
+  const lines = [];
+  SURVIVAL_KIT.refs.forEach(([sitId, fr]) => {
+    const sit = SITUATIONS.find((s) => s.id === sitId);
+    const line = sit && sit.lines.find((l) => l.fr === fr);
+    if (!line) {
+      console.warn(`Kit de survie : référence introuvable — ${sitId} / ${fr}`);
+      return;
+    }
+    // On garde un lien vers la scène d'origine : une phrase isolée de son
+    // contexte perd la moitié de son intérêt.
+    lines.push({ ...line, from: sit.label });
+  });
+  SURVIVAL_KIT.lines = lines;
+  SITUATIONS.unshift(SURVIVAL_KIT);
+})();
+
+// Regroupe toutes les lignes marquées `check`, pour la relecture par un
+// locuteur natif. Sans cette vue il faudrait relire les six situations en
+// entier à chaque ajout.
+function linesToCheck() {
+  const out = [];
+  SITUATIONS.forEach((sit) => {
+    // Le kit de survie ne fait que pointer vers des phrases définies ailleurs :
+    // l'inclure ferait relire deux fois les mêmes expressions.
+    if (sit.id === SURVIVAL_KIT.id) return;
+    sit.lines.forEach((line) => {
+      if (line.check) out.push({ situation: sit.label, ...line });
+    });
+  });
+  return out;
+}
+</script>
+<script>
+// Contenu pédagogique : Darija (arabe marocain)
+// Remarque : la Darija ne possède pas d'orthographe latine standardisée.
+// La transcription "latin" utilisée ici est une transcription phonétique
+// courante (le "3" = ع, le "7" = ح, le "9"/"q" = ق).
+
+const CATEGORIES = [
+  {
+    id: "salutations",
+    label: "Salutations",
+    emoji: "👋",
+    kidFriendly: true,
+    items: [
+      { fr: "Bonjour / Salut", latin: "Salam", arabic: "السلام", emoji: "👋" },
+      { fr: "Comment ça va ?", latin: "Kidayer? (homme) / Kidayra? (femme)", arabic: "كيداير؟ / كيدايرة؟", emoji: "🙂" },
+      { fr: "Ça va bien, merci", latin: "La bas, lhamdulillah", arabic: "لا باس، الحمد لله", emoji: "😊" },
+      { fr: "Merci", latin: "Choukran", arabic: "شكرا", emoji: "🙏" },
+      { fr: "S'il te plaît", latin: "3afak", arabic: "عافاك", emoji: "🤲" },
+      { fr: "Oui", latin: "Iyeh", arabic: "ايه", emoji: "✅" },
+      { fr: "Non", latin: "La", arabic: "لا", emoji: "❌" },
+      { fr: "Au revoir", latin: "Bslama", arabic: "بسلامة", emoji: "👋" },
+      { fr: "Bienvenue", latin: "Marhba", arabic: "مرحبا", emoji: "🤗" },
+      { fr: "Bonsoir", latin: "Msa lkhir", arabic: "مسا الخير", emoji: "🌆" },
+      { fr: "Bonne journée", latin: "Nhark mzyan", arabic: "نهارك مزيان", emoji: "☀️" },
+      { fr: "Excusez-moi / Pardon", latin: "Smeh lia", arabic: "سمح ليا", emoji: "🙇" },
+      { fr: "Ce n'est rien / pas de problème", latin: "Machi muchkil", arabic: "ماشي مشكل", emoji: "🤷‍♂️" },
+      { fr: "De rien", latin: "Bla jmil", arabic: "بلا جميل", emoji: "😊" },
+      { fr: "Enchanté(e)", latin: "Metcharfin", arabic: "متشرفين", emoji: "🤝" },
+      { fr: "Félicitations", latin: "Mabrouk", arabic: "مبروك", emoji: "🎉" },
+      { fr: "Bon appétit", latin: "Bsaha", arabic: "بالصحة", emoji: "🍽️" },
+      { fr: "À bientôt", latin: "Nchoufek qriban", arabic: "نشوفك قريبا", emoji: "👋" },
+    ],
+  },
+  {
+    id: "famille",
+    label: "Famille",
+    emoji: "👨‍👩‍👧‍👦",
+    kidFriendly: true,
+    items: [
+      { fr: "Papa", latin: "Baba", arabic: "بابا", emoji: "👨", tags: ["any", "seeable"] },
+      { fr: "Maman", latin: "Mama / Mma", arabic: "ماما", emoji: "👩", tags: ["any", "seeable"] },
+      { fr: "Frère", latin: "Khoya", arabic: "خويا", emoji: "👦", tags: ["any", "seeable"] },
+      { fr: "Sœur", latin: "Khti", arabic: "ختي", emoji: "👧", tags: ["any", "seeable"] },
+      { fr: "Fils", latin: "Weld", arabic: "ولد", emoji: "👦", tags: ["any", "seeable"] },
+      { fr: "Fille", latin: "Bnt", arabic: "بنت", emoji: "👧", tags: ["any", "seeable"] },
+      { fr: "Grand-père", latin: "Jeddi", arabic: "جدي", emoji: "👴", tags: ["any", "seeable"] },
+      { fr: "Grand-mère", latin: "Jeddati", arabic: "جدتي", emoji: "👵", tags: ["any", "seeable"] },
+      { fr: "Famille", latin: "3a'ila", arabic: "عائلة", emoji: "👨‍👩‍👧‍👦", tags: ["any"] },
+      { fr: "Oncle (paternel)", latin: "3mi", arabic: "عمي", emoji: "👨", tags: ["any", "seeable"] },
+      { fr: "Oncle (maternel)", latin: "Khali", arabic: "خالي", emoji: "👨", tags: ["any", "seeable"] },
+      { fr: "Tante (paternelle)", latin: "3mti", arabic: "عمتي", emoji: "👩", tags: ["any", "seeable"] },
+      { fr: "Tante (maternelle)", latin: "Khalti", arabic: "خالتي", emoji: "👩", tags: ["any", "seeable"] },
+      { fr: "Cousin", latin: "Weld 3mi", arabic: "ولد عمي", emoji: "🧑", tags: ["any", "seeable"] },
+      { fr: "Cousine", latin: "Bnt 3mi", arabic: "بنت عمي", emoji: "🧑", tags: ["any", "seeable"] },
+      { fr: "Mari", latin: "Rajel", arabic: "راجل", emoji: "🤵", tags: ["any", "seeable"] },
+      { fr: "Femme (épouse)", latin: "Mra", arabic: "مرا", emoji: "👰", tags: ["any", "seeable"] },
+      { fr: "Bébé", latin: "Drri sghir", arabic: "دري صغير", emoji: "👶", tags: ["any", "seeable"] },
+    ],
+  },
+  {
+    id: "nombres",
+    label: "Nombres",
+    emoji: "🔢",
+    kidFriendly: true,
+    items: [
+      { fr: "1", latin: "Wahed", arabic: "واحد", emoji: "1️⃣" },
+      { fr: "2", latin: "Jouj", arabic: "جوج", emoji: "2️⃣" },
+      { fr: "3", latin: "Tlata", arabic: "تلاتة", emoji: "3️⃣" },
+      { fr: "4", latin: "Rb3a", arabic: "ربعة", emoji: "4️⃣" },
+      { fr: "5", latin: "Khamsa", arabic: "خمسة", emoji: "5️⃣" },
+      { fr: "6", latin: "Stta", arabic: "ستة", emoji: "6️⃣" },
+      { fr: "7", latin: "Sb3a", arabic: "سبعة", emoji: "7️⃣" },
+      { fr: "8", latin: "Tmnya", arabic: "تمنية", emoji: "8️⃣" },
+      { fr: "9", latin: "Tsa3oud", arabic: "تسعود", emoji: "9️⃣" },
+      { fr: "10", latin: "3achra", arabic: "عشرة", emoji: "🔟" },
+      { fr: "11", latin: "Hdach", arabic: "احداش", emoji: "🔢" },
+      { fr: "12", latin: "Tnach", arabic: "طناش", emoji: "🔢" },
+      { fr: "13", latin: "Tlttach", arabic: "تلطاش", emoji: "🔢" },
+      { fr: "14", latin: "Rba3tach", arabic: "ربعطاش", emoji: "🔢" },
+      { fr: "15", latin: "Khmstach", arabic: "خمسطاش", emoji: "🔢" },
+      { fr: "16", latin: "Sttach", arabic: "سطاش", emoji: "🔢" },
+      { fr: "17", latin: "Sb3tach", arabic: "سبعطاش", emoji: "🔢" },
+      { fr: "18", latin: "Tmntach", arabic: "تمنطاش", emoji: "🔢" },
+      { fr: "19", latin: "Ts3tach", arabic: "تسعطاش", emoji: "🔢" },
+      { fr: "20", latin: "3achrin", arabic: "عشرين", emoji: "🔢" },
+      { fr: "30", latin: "Tlatin", arabic: "تلاتين", emoji: "🔢" },
+      { fr: "40", latin: "Rb3in", arabic: "ربعين", emoji: "🔢" },
+      { fr: "50", latin: "Khamsin", arabic: "خمسين", emoji: "🔢" },
+      { fr: "100", latin: "Miya", arabic: "مية", emoji: "🔢" },
+      { fr: "Premier", latin: "Lowel", arabic: "الأول", emoji: "🥇" },
+      { fr: "Deuxième", latin: "Tani", arabic: "الثاني", emoji: "🥈" },
+      { fr: "Troisième", latin: "Talet", arabic: "الثالث", emoji: "🥉" },
+      { fr: "Dernier", latin: "Lakhir", arabic: "الأخير", emoji: "🏁" },
+    ],
+  },
+  {
+    id: "couleurs",
+    label: "Couleurs",
+    emoji: "🎨",
+    kidFriendly: true,
+    items: [
+      { fr: "Rouge", latin: "Hmer", arabic: "احمر", emoji: "🔴" },
+      { fr: "Bleu", latin: "Zrq", arabic: "ازرق", emoji: "🔵" },
+      { fr: "Vert", latin: "Khdr", arabic: "اخضر", emoji: "🟢" },
+      { fr: "Jaune", latin: "Sfr", arabic: "اصفر", emoji: "🟡" },
+      { fr: "Noir", latin: "Kahel", arabic: "كحل", emoji: "⚫" },
+      { fr: "Blanc", latin: "Byed", arabic: "بيض", emoji: "⚪" },
+    ],
+  },
+  {
+    id: "animaux",
+    label: "Animaux",
+    emoji: "🐾",
+    kidFriendly: true,
+    items: [
+      { fr: "Chat", latin: "Mouch", arabic: "موش", emoji: "🐱", tags: ["any", "seeable"] },
+      { fr: "Chien", latin: "Kelb", arabic: "كلب", emoji: "🐶", tags: ["any", "seeable"] },
+      { fr: "Oiseau", latin: "Tir", arabic: "طير", emoji: "🐦", tags: ["any", "seeable"] },
+      { fr: "Poisson", latin: "Hout", arabic: "حوت", emoji: "🐟", tags: ["any", "seeable"] },
+      { fr: "Cheval", latin: "3awd", arabic: "عود", emoji: "🐴", tags: ["any", "seeable"] },
+      { fr: "Vache", latin: "Bagra", arabic: "بكرة", emoji: "🐄", tags: ["any", "seeable"] },
+    ],
+  },
+  {
+    id: "nourriture",
+    label: "Nourriture",
+    emoji: "🍎",
+    kidFriendly: true,
+    items: [
+      { fr: "Pain", latin: "Khobz", arabic: "خبز", emoji: "🍞", tags: ["any", "food"] },
+      { fr: "Eau", latin: "Ma", arabic: "ما", emoji: "💧", tags: ["any", "drink"] },
+      { fr: "Lait", latin: "Hlib", arabic: "حليب", emoji: "🥛", tags: ["any", "drink"] },
+      { fr: "Pomme", latin: "Tffah", arabic: "تفاح", emoji: "🍎", tags: ["any", "food"] },
+      { fr: "Sucre", latin: "Sokkar", arabic: "سكر", emoji: "🍬", tags: ["any", "food"] },
+      { fr: "Thé", latin: "Atay", arabic: "أتاي", emoji: "🍵", tags: ["any", "drink"] },
+      { fr: "Café", latin: "Qahwa", arabic: "قهوة", emoji: "☕", tags: ["any", "drink"] },
+      { fr: "Viande", latin: "Lham", arabic: "لحم", emoji: "🍖", tags: ["any", "food"] },
+      { fr: "Légumes", latin: "Khodra", arabic: "خضرة", emoji: "🥕", tags: ["any", "food"] },
+      { fr: "Fruits", latin: "Fakia", arabic: "فاكية", emoji: "🍇", tags: ["any", "food"] },
+      { fr: "Riz", latin: "Rz", arabic: "رز", emoji: "🍚", tags: ["any", "food"] },
+      { fr: "Œuf", latin: "Bida", arabic: "بيضة", emoji: "🥚", tags: ["any", "food"] },
+    ],
+  },
+  {
+    id: "corps",
+    label: "Corps",
+    emoji: "🙆",
+    kidFriendly: true,
+    items: [
+      { fr: "Tête", latin: "Ras", arabic: "راس", emoji: "🧠" },
+      { fr: "Main", latin: "Yed", arabic: "يد", emoji: "✋" },
+      { fr: "Pied", latin: "Rjel", arabic: "رجل", emoji: "🦶" },
+      { fr: "Ventre", latin: "Kerch", arabic: "كرش", emoji: "🫃" },
+      { fr: "Œil / Yeux", latin: "3in", arabic: "عين", emoji: "👁️" },
+      { fr: "Bouche", latin: "Fum", arabic: "فم", emoji: "👄" },
+      { fr: "Nez", latin: "Nif", arabic: "نيف", emoji: "👃" },
+      { fr: "Oreille", latin: "Wdn", arabic: "ودن", emoji: "👂" },
+    ],
+  },
+  {
+    id: "famille_visite",
+    label: "Avec la famille",
+    emoji: "🏡",
+    kidFriendly: true,
+    items: [
+      { fr: "Je peux jouer dehors ?", latin: "Wach ne9der nl3ab bra?", arabic: "واش نقدر نلعب برا؟", emoji: "🤸" },
+      { fr: "Aide-moi s'il te plaît", latin: "3awenni 3afak", arabic: "عاونني عافاك", emoji: "🙋" },
+      { fr: "Un bisou", latin: "Bosa", arabic: "بوسة", emoji: "😘" },
+      { fr: "Un câlin", latin: "Hidn", arabic: "حضن", emoji: "🤗" },
+      { fr: "Je t'aime", latin: "Kanbghik", arabic: "كنبغيك", emoji: "❤️" },
+      { fr: "C'est délicieux !", latin: "Bnina!", arabic: "بنينة!", emoji: "😋" },
+      { fr: "Je suis rassasié(e), merci", latin: "Chbe3t, choukran", arabic: "شبعت، شكرا", emoji: "🍽️" },
+      { fr: "Bonne nuit", latin: "Tsbah 3la khir", arabic: "تصبح على خير", emoji: "🌙" },
+    ],
+  },
+  {
+    id: "phrases",
+    label: "Phrases utiles",
+    emoji: "💬",
+    kidFriendly: false,
+    items: [
+      { fr: "Je m'appelle...", latin: "Smiti...", arabic: "سميتي...", emoji: "💬" },
+      { fr: "Comment tu t'appelles ?", latin: "Ach smitek?", arabic: "اش سميتك؟", emoji: "❓" },
+      { fr: "Je ne comprends pas", latin: "Ma fhemtch", arabic: "ما فهمتش", emoji: "🤷" },
+      { fr: "Je ne parle pas bien Darija", latin: "Ma ne3reftch nhder Darija mzyan", arabic: "ما نعرفتش نهضر الدارجة مزيان", emoji: "🗣️" },
+      { fr: "Où sont les toilettes ?", latin: "Fin kayn lbit lma?", arabic: "فين كاين البيت الما؟", emoji: "🚻" },
+      { fr: "C'est combien ?", latin: "Bcha7al?", arabic: "بشحال؟", emoji: "💰" },
+      { fr: "J'ai faim", latin: "Fiya jou3", arabic: "فيا جوع", emoji: "🍽️" },
+      { fr: "J'ai soif", latin: "Fiya 3tech", arabic: "فيا عطش", emoji: "🥤" },
+      { fr: "Je suis fatigué(e)", latin: "Ana 3eyan", arabic: "انا عيان", emoji: "😴" },
+      { fr: "Je suis malade", latin: "Ana mrid", arabic: "انا مريض", emoji: "🤒" },
+      { fr: "Il me faut...", latin: "Khessni...", arabic: "خصني...", emoji: "🙏" },
+    ],
+  },
+  {
+    id: "questions",
+    label: "Mots interrogatifs",
+    emoji: "❓",
+    kidFriendly: false,
+    items: [
+      { fr: "Qui ?", latin: "Chkoun?", arabic: "شكون؟", emoji: "❓" },
+      { fr: "Quoi ?", latin: "Ach?", arabic: "اش؟", emoji: "❓" },
+      { fr: "Où ?", latin: "Fin?", arabic: "فين؟", emoji: "❓" },
+      { fr: "Quand ?", latin: "Fuqach?", arabic: "فوقاش؟", emoji: "❓" },
+      { fr: "Pourquoi ?", latin: "3lach?", arabic: "علاش؟", emoji: "❓" },
+      { fr: "Comment ?", latin: "Kifach?", arabic: "كيفاش؟", emoji: "❓" },
+      { fr: "Combien ?", latin: "Chhal?", arabic: "شحال؟", emoji: "❓" },
+    ],
+  },
+  {
+    id: "verbes",
+    label: "Verbes courants",
+    emoji: "🏃",
+    kidFriendly: false,
+    items: [
+      { fr: "Je veux", latin: "Bghit", arabic: "بغيت", emoji: "🙏" },
+      { fr: "Je peux", latin: "Nqder", arabic: "نقدر", emoji: "💪" },
+      { fr: "Je sais", latin: "3reft", arabic: "عرفت", emoji: "🧠" },
+      { fr: "Je vais (aller)", latin: "Ghadi nmchi", arabic: "غادي نمشي", emoji: "🚶" },
+      { fr: "Je viens", latin: "Ghadi nji", arabic: "غادي نجي", emoji: "🙋" },
+      { fr: "Je parle", latin: "Kanhder", arabic: "كنهضر", emoji: "🗣️" },
+      { fr: "Je mange", latin: "Kanakol", arabic: "كناكل", emoji: "🍽️" },
+      { fr: "Je bois", latin: "Kanchrb", arabic: "كنشرب", emoji: "🥤" },
+      { fr: "Je dors", latin: "Kanne3s", arabic: "كننعس", emoji: "😴" },
+      { fr: "Je travaille", latin: "Kankhdem", arabic: "كنخدم", emoji: "💼" },
+      { fr: "J'achète", latin: "Kanchri", arabic: "كنشري", emoji: "🛍️" },
+      { fr: "Je donne", latin: "Kan3ti", arabic: "كنعطي", emoji: "🤲" },
+    ],
+  },
+  {
+    id: "adjectifs",
+    label: "Adjectifs",
+    emoji: "✨",
+    kidFriendly: false,
+    items: [
+      { fr: "Grand", latin: "Kbir", arabic: "كبير", emoji: "📏" },
+      { fr: "Petit", latin: "Sghir", arabic: "صغير", emoji: "🤏" },
+      { fr: "Beau / Joli", latin: "Zwin", arabic: "زوين", emoji: "😍" },
+      { fr: "Content", latin: "Farhan", arabic: "فرحان", emoji: "😄" },
+      { fr: "Fatigué", latin: "3eyan", arabic: "عيان", emoji: "😴" },
+      { fr: "Chaud", latin: "Skhoun", arabic: "سخون", emoji: "🔥" },
+      { fr: "Froid", latin: "Bared", arabic: "بارد", emoji: "❄️" },
+      { fr: "Bon / délicieux", latin: "Mzyan", arabic: "مزيان", emoji: "👍" },
+      { fr: "Cher", latin: "Ghali", arabic: "غالي", emoji: "💸" },
+      { fr: "Pas cher", latin: "Rkhis", arabic: "رخيص", emoji: "🪙" },
+    ],
+  },
+  {
+    id: "temps",
+    label: "Temps & Calendrier",
+    emoji: "📅",
+    kidFriendly: false,
+    items: [
+      { fr: "Aujourd'hui", latin: "Lyoum", arabic: "اليوم", emoji: "📅" },
+      { fr: "Demain", latin: "Ghda", arabic: "غدا", emoji: "➡️" },
+      { fr: "Hier", latin: "Lbareh", arabic: "لبارح", emoji: "⬅️" },
+      { fr: "Maintenant", latin: "Daba", arabic: "دابا", emoji: "⏰" },
+      { fr: "Matin", latin: "Sbah", arabic: "صباح", emoji: "🌅" },
+      { fr: "Soir", latin: "3chiya", arabic: "عشية", emoji: "🌆" },
+      { fr: "Semaine", latin: "Simana", arabic: "سيمانة", emoji: "🗓️" },
+      { fr: "Lundi", latin: "Tnin", arabic: "تنين", emoji: "🗓️" },
+      { fr: "Mardi", latin: "Tlat", arabic: "تلات", emoji: "🗓️" },
+      { fr: "Mercredi", latin: "Larb3a", arabic: "لاربعا", emoji: "🗓️" },
+      { fr: "Jeudi", latin: "Lkhmis", arabic: "لخميس", emoji: "🗓️" },
+      { fr: "Vendredi", latin: "Jjm3a", arabic: "جمعة", emoji: "🗓️" },
+      { fr: "Samedi", latin: "Sebt", arabic: "سبت", emoji: "🗓️" },
+      { fr: "Dimanche", latin: "7ed", arabic: "حد", emoji: "🗓️" },
+      { fr: "Mois", latin: "Chher", arabic: "شهر", emoji: "🌙" },
+      { fr: "Année", latin: "3am", arabic: "عام", emoji: "🎊" },
+      { fr: "Avant-hier", latin: "Wellbareh", arabic: "ولبارح", emoji: "⏪" },
+      { fr: "Après-demain", latin: "Ba3d ghda", arabic: "بعد غدا", emoji: "⏩" },
+    ],
+  },
+  {
+    id: "maison",
+    label: "Maison",
+    emoji: "🏠",
+    kidFriendly: false,
+    items: [
+      { fr: "Maison", latin: "Dar", arabic: "دار", emoji: "🏠" },
+      { fr: "Chambre", latin: "Bit", arabic: "بيت", emoji: "🛏️" },
+      { fr: "Cuisine", latin: "Kouzina", arabic: "كوزينة", emoji: "🍳" },
+      { fr: "Salle de bain", latin: "Hmam", arabic: "حمام", emoji: "🚿" },
+      { fr: "Porte", latin: "Bab", arabic: "باب", emoji: "🚪" },
+      { fr: "Table", latin: "Tabla", arabic: "طابلة", emoji: "🪑" },
+      { fr: "Chaise", latin: "Korsi", arabic: "كرسي", emoji: "🪑" },
+      { fr: "Lit", latin: "Namousiya", arabic: "ناموسية", emoji: "🛏️" },
+    ],
+  },
+  {
+    id: "marche",
+    label: "Au marché",
+    emoji: "🛒",
+    kidFriendly: false,
+    items: [
+      { fr: "Marché", latin: "Souq", arabic: "سوق", emoji: "🛒" },
+      { fr: "Argent", latin: "Flouss", arabic: "فلوس", emoji: "💵" },
+      { fr: "C'est trop cher", latin: "Ghali bezaf", arabic: "غالي بزاف", emoji: "😬" },
+      { fr: "Un peu moins ?", latin: "Naqas chwiya?", arabic: "نقص شوية؟", emoji: "🤏" },
+      { fr: "D'accord", latin: "Wakha", arabic: "واخا", emoji: "👌" },
+      { fr: "Petite monnaie", latin: "Sarf", arabic: "صرف", emoji: "🪙" },
+    ],
+  },
+  {
+    id: "expressions",
+    label: "Expressions courantes",
+    emoji: "🗨️",
+    kidFriendly: false,
+    items: [
+      { fr: "Si Dieu le veut", latin: "InchaAllah", arabic: "ان شاء الله", emoji: "🙏" },
+      { fr: "Dieu merci", latin: "Hamdoulillah", arabic: "الحمد لله", emoji: "🙏" },
+      { fr: "Au nom de Dieu (avant de manger)", latin: "Bismillah", arabic: "بسم الله", emoji: "🍽️" },
+      { fr: "Joli compliment protecteur", latin: "Machallah", arabic: "ماشاء الله", emoji: "✨" },
+      { fr: "Je le jure", latin: "Wallah", arabic: "والله", emoji: "🤞" },
+      { fr: "Allons-y", latin: "Yallah", arabic: "يالله", emoji: "🏃" },
+      { fr: "Ça suffit / stop", latin: "Safi", arabic: "صافي", emoji: "✋" },
+      { fr: "Beaucoup", latin: "Bezaf", arabic: "بزاف", emoji: "📈" },
+      { fr: "Un peu", latin: "Chwiya", arabic: "شوية", emoji: "🤏" },
+      { fr: "Seulement", latin: "Ghir", arabic: "غير", emoji: "☝️" },
+    ],
+  },
+  {
+    id: "transport",
+    label: "Transport",
+    emoji: "🚗",
+    kidFriendly: false,
+    items: [
+      { fr: "Voiture", latin: "Tomobil", arabic: "طوموبيل", emoji: "🚗" },
+      { fr: "Taxi", latin: "Taxi", arabic: "طاكسي", emoji: "🚕" },
+      { fr: "Train", latin: "Tran", arabic: "طران", emoji: "🚆" },
+      { fr: "Avion", latin: "Tiyara", arabic: "طيارة", emoji: "✈️" },
+      { fr: "Bus", latin: "Kar", arabic: "كار", emoji: "🚌" },
+      { fr: "Aéroport", latin: "Matar", arabic: "مطار", emoji: "🛫" },
+      { fr: "Tout droit", latin: "Nichan", arabic: "نيشان", emoji: "⬆️" },
+      { fr: "À droite", latin: "L-limen", arabic: "الليمن", emoji: "➡️" },
+      { fr: "À gauche", latin: "L-lisr", arabic: "الليسر", emoji: "⬅️" },
+    ],
+  },
+  {
+    id: "meteo",
+    label: "Météo & Saisons",
+    emoji: "🌦️",
+    kidFriendly: false,
+    items: [
+      { fr: "Il fait chaud", latin: "Skhoun l-jou", arabic: "سخون الجو", emoji: "🥵" },
+      { fr: "Il fait froid", latin: "Bared l-jou", arabic: "بارد الجو", emoji: "🥶" },
+      { fr: "Il pleut", latin: "Katchti", arabic: "كتشتي", emoji: "🌧️" },
+      { fr: "Soleil", latin: "Chms", arabic: "شمس", emoji: "☀️" },
+      { fr: "Pluie", latin: "Chta", arabic: "شتا", emoji: "🌧️" },
+      { fr: "Nuage", latin: "S7ab", arabic: "سحاب", emoji: "☁️" },
+      { fr: "Été", latin: "Sif", arabic: "صيف", emoji: "🏖️" },
+      { fr: "Hiver", latin: "Chtwa", arabic: "شتوة", emoji: "❄️" },
+      { fr: "Printemps", latin: "Rbi3", arabic: "ربيع", emoji: "🌸" },
+      { fr: "Automne", latin: "Kharif", arabic: "خريف", emoji: "🍂" },
+    ],
+  },
+  {
+    id: "vetements",
+    label: "Vêtements",
+    emoji: "👕",
+    kidFriendly: false,
+    items: [
+      { fr: "Vêtements", latin: "Hwayj", arabic: "حوايج", emoji: "👕" },
+      { fr: "Chaussures", latin: "Sebbat", arabic: "سبّاط", emoji: "👟" },
+      { fr: "T-shirt / Chemise", latin: "Qamija", arabic: "قميجة", emoji: "👕" },
+      { fr: "Pantalon", latin: "Serwal", arabic: "سروال", emoji: "👖" },
+      { fr: "Djellaba", latin: "Jellaba", arabic: "جلابة", emoji: "🧥" },
+      { fr: "Manteau", latin: "Kabbot", arabic: "كابوط", emoji: "🧥" },
+    ],
+  },
+  {
+    id: "emotions",
+    label: "Émotions",
+    emoji: "😊",
+    kidFriendly: true,
+    items: [
+      { fr: "Triste", latin: "Hzin", arabic: "حزين", emoji: "😢" },
+      { fr: "En colère", latin: "Ghadban", arabic: "غضبان", emoji: "😠" },
+      { fr: "Peur", latin: "Khayef", arabic: "خايف", emoji: "😨" },
+      { fr: "Surpris", latin: "Mdhuh", arabic: "مدهوش", emoji: "😲" },
+      { fr: "Amoureux", latin: "3achiq", arabic: "عاشق", emoji: "😍" },
+      { fr: "Fier", latin: "Fakhur", arabic: "فخور", emoji: "😌" },
+    ],
+  },
+  {
+    id: "sante",
+    label: "Santé & Urgences",
+    emoji: "🚑",
+    kidFriendly: false,
+    items: [
+      { fr: "Docteur", latin: "Tbib", arabic: "طبيب", emoji: "👨‍⚕️" },
+      { fr: "Hôpital", latin: "Sbitar", arabic: "سبيطار", emoji: "🏥" },
+      { fr: "Pharmacie", latin: "Farmasyan", arabic: "فارماسيان", emoji: "💊" },
+      { fr: "Au secours !", latin: "3awnuni!", arabic: "عاونوني!", emoji: "🆘" },
+      { fr: "J'ai mal ici", latin: "Kaydarni hna", arabic: "كيضرني هنا", emoji: "🤕" },
+      { fr: "Fièvre", latin: "Skhana", arabic: "سخانة", emoji: "🌡️" },
+      { fr: "Ça ne va pas", latin: "Machi mzyan", arabic: "ماشي مزيان", emoji: "😷" },
+      { fr: "Ambulance", latin: "Ambulans", arabic: "امبولانس", emoji: "🚑" },
+    ],
+  },
+  {
+    id: "restaurant",
+    label: "Au restaurant",
+    emoji: "🍽️",
+    kidFriendly: false,
+    items: [
+      { fr: "L'addition", latin: "L-hsab", arabic: "الحساب", emoji: "🧾" },
+      { fr: "Un verre", latin: "Kas", arabic: "كاس", emoji: "🥛" },
+      { fr: "Une assiette", latin: "Tbsi", arabic: "طبسي", emoji: "🍽️" },
+      { fr: "Cuillère", latin: "M3elqa", arabic: "معلقة", emoji: "🥄" },
+      { fr: "Fourchette", latin: "Ferchita", arabic: "فرشيطة", emoji: "🍴" },
+      { fr: "Couteau", latin: "Mus", arabic: "موس", emoji: "🔪" },
+      { fr: "Sans sucre", latin: "Bla sokkar", arabic: "بلا سكر", emoji: "🚫🍬" },
+      { fr: "Avec du lait", latin: "B lhlib", arabic: "بالحليب", emoji: "🥛" },
+    ],
+  },
+  {
+    id: "voyage",
+    label: "Voyage & Logement",
+    emoji: "🧳",
+    kidFriendly: false,
+    items: [
+      { fr: "Hôtel", latin: "Otel", arabic: "أوتيل", emoji: "🏨" },
+      { fr: "Valise", latin: "Balisa", arabic: "باليزة", emoji: "🧳" },
+      { fr: "Passeport", latin: "Jawaz safar", arabic: "جواز سفر", emoji: "📔" },
+      { fr: "Clé", latin: "Saroute", arabic: "سروت", emoji: "🔑" },
+      { fr: "J'ai réservé", latin: "7jezt", arabic: "حجزت", emoji: "📅" },
+      { fr: "Combien de nuits ?", latin: "Chhal men lila?", arabic: "شحال من ليلة؟", emoji: "🌙" },
+    ],
+  },
+  {
+    id: "lieux",
+    label: "Lieux en ville",
+    emoji: "🏙️",
+    kidFriendly: false,
+    items: [
+      { fr: "Banque", latin: "Banka", arabic: "بنكة", emoji: "🏦" },
+      { fr: "Poste", latin: "Bosta", arabic: "بوسطة", emoji: "📮" },
+      { fr: "École", latin: "Madrasa", arabic: "مدرسة", emoji: "🏫" },
+      { fr: "Mosquée", latin: "Jam3", arabic: "جامع", emoji: "🕌" },
+      { fr: "Plage / Mer", latin: "Bhar", arabic: "بحر", emoji: "🏖️" },
+      { fr: "Montagne", latin: "Jbel", arabic: "جبل", emoji: "⛰️" },
+      { fr: "Ville", latin: "Mdina", arabic: "مدينة", emoji: "🏙️" },
+      { fr: "Rue", latin: "Zanka", arabic: "زنقة", emoji: "🛣️" },
+    ],
+  },
+  {
+    id: "professions",
+    label: "Professions",
+    emoji: "💼",
+    kidFriendly: false,
+    items: [
+      { fr: "Travail", latin: "Khedma", arabic: "خدمة", emoji: "💼" },
+      { fr: "Professeur", latin: "Ustad", arabic: "أستاذ", emoji: "🧑‍🏫" },
+      { fr: "Étudiant", latin: "Talib", arabic: "طالب", emoji: "🧑‍🎓" },
+      { fr: "Ingénieur", latin: "Mohandiss", arabic: "مهندس", emoji: "🧑‍💻" },
+      { fr: "Cuisinier", latin: "Tabbakh", arabic: "طباخ", emoji: "🧑‍🍳" },
+      { fr: "Chauffeur", latin: "Sayeq", arabic: "سايق", emoji: "🚖" },
+    ],
+  },
+];
+
+// Générateur de phrases simples : Sujet (Je) + Verbe + Complément
+// Les compléments possibles sont piochés parmi les noms tagués ci-dessus
+// (famille, animaux, nourriture) selon ce que le verbe permet ("tags").
+const SENTENCE_BUILDER = {
+  subject: { fr: "Je", latin: "Ana", arabic: "أنا" },
+  verbs: [
+    { id: "vouloir", fr: "veux", latin: "bghit", arabic: "بغيت", emoji: "🙏", tag: "any" },
+    { id: "aimer", fr: "aime", latin: "kanbghi", arabic: "كنبغي", emoji: "❤️", tag: "any" },
+    { id: "voir", fr: "vois", latin: "kanchouf", arabic: "كنشوف", emoji: "👀", tag: "seeable" },
+    { id: "manger", fr: "mange", latin: "kanakol", arabic: "كناكل", emoji: "🍽️", tag: "food" },
+    { id: "boire", fr: "bois", latin: "kanchrb", arabic: "كنشرب", emoji: "🥤", tag: "drink" },
+  ],
+};
+
+function getSentenceObjects(tag) {
+  return CATEGORIES.flatMap((c) => c.items).filter(
+    (item) => item.tags && item.tags.includes(tag)
+  );
+}
+</script>
+<script>
+// ---------- Identité stable d'une phrase ----------
+// Le nom du fichier audio doit survivre à une réorganisation du contenu :
+// on le dérive du texte, comme la progression de la relecture.
+function keyOf(item) {
+  const raw = item.fr + "|" + item.latin;
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+  return "k" + (h >>> 0).toString(36);
+}
+
+// ---------- Lots ----------
+// On découpe par thème : personne n'enregistre 338 phrases d'affilée, et un
+// lot qui se termine donne envie d'en faire un autre.
+const BATCHES = [];
+SITUATIONS.forEach((s) => {
+  if (s.refs) return; // le kit de survie ne fait que pointer ailleurs
+  BATCHES.push({ id: "sit-" + s.id, label: s.emoji + " " + s.label, items: s.lines });
+});
+CATEGORIES.forEach((c) => {
+  BATCHES.push({ id: "cat-" + c.id, label: c.emoji + " " + c.label, items: c.items });
+});
+
+// ---------- Stockage ----------
+// Les enregistrements sont des Blob : IndexedDB, pas localStorage.
+let db = null;
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("dari-audio", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("clips");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function put(key, blob) {
+  return new Promise((res, rej) => {
+    const t = db.transaction("clips", "readwrite");
+    t.objectStore("clips").put(blob, key);
+    t.oncomplete = res;
+    t.onerror = () => rej(t.error);
+  });
+}
+function get(key) {
+  return new Promise((res) => {
+    const t = db.transaction("clips", "readonly");
+    const q = t.objectStore("clips").get(key);
+    q.onsuccess = () => res(q.result || null);
+    q.onerror = () => res(null);
+  });
+}
+function allKeys() {
+  return new Promise((res) => {
+    const t = db.transaction("clips", "readonly");
+    const q = t.objectStore("clips").getAllKeys();
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => res([]);
+  });
+}
+
+// ---------- Écriture ZIP sans dépendance ----------
+// L'app n'a aucune dépendance et ce fichier doit pouvoir s'ouvrir seul : on
+// écrit une archive « stored » (sans compression), format le plus simple et
+// parfaitement lisible par le Finder comme par l'Explorateur.
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  files.forEach((f) => {
+    const name = enc.encode(f.name);
+    const crc = crc32(f.data);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(8, 0, true); // stored
+    local.setUint32(14, crc, true);
+    local.setUint32(18, f.data.length, true);
+    local.setUint32(22, f.data.length, true);
+    local.setUint16(26, name.length, true);
+    chunks.push(new Uint8Array(local.buffer), name, f.data);
+
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true);
+    cen.setUint16(4, 20, true);
+    cen.setUint16(6, 20, true);
+    cen.setUint16(10, 0, true);
+    cen.setUint32(16, crc, true);
+    cen.setUint32(20, f.data.length, true);
+    cen.setUint32(24, f.data.length, true);
+    cen.setUint16(28, name.length, true);
+    cen.setUint32(42, offset, true);
+    central.push(new Uint8Array(cen.buffer), name);
+    offset += 30 + name.length + f.data.length;
+  });
+  const centralSize = central.reduce((n, c) => n + c.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: "application/zip" });
+}
+
+// ---------- Enregistrement ----------
+let stream = null;
+let recorder = null;
+let currentKey = null;
+
+async function ensureMic() {
+  if (stream) return stream;
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  return stream;
+}
+
+function pickMime() {
+  // Safari ne produit que du mp4, Chrome du webm : on retient ce que le
+  // navigateur accepte réellement plutôt que d'imposer un format.
+  const candidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+  for (const m of candidates) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return "";
+}
+
+// ---------- Interface ----------
+const select = document.getElementById("batch");
+const list = document.getElementById("list");
+const countEl = document.getElementById("count");
+const exportBtn = document.getElementById("export");
+
+BATCHES.forEach((b, i) => {
+  const o = document.createElement("option");
+  o.value = i;
+  o.textContent = b.label + " (" + b.items.length + ")";
+  select.appendChild(o);
+});
+
+async function refresh() {
+  const keys = await allKeys();
+  const total = BATCHES.reduce((n, b) => n + b.items.length, 0);
+  countEl.textContent = keys.length + " / " + total + " enregistrées";
+  exportBtn.disabled = keys.length === 0;
+}
+
+async function renderBatch() {
+  const batch = BATCHES[select.value];
+  list.innerHTML = "";
+  for (const item of batch.items) {
+    const key = keyOf(item);
+    const existing = await get(key);
+
+    const card = document.createElement("div");
+    card.className = "card" + (existing ? " done" : "");
+    card.innerHTML =
+      '<div class="fr">' + item.fr + "</div>" +
+      '<div class="latin">' + item.latin + "</div>" +
+      '<div class="arabic">' + item.arabic + "</div>";
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const rec = document.createElement("button");
+    rec.className = "rec";
+    rec.textContent = existing ? "🎙️ Refaire" : "🎙️ Enregistrer";
+
+    const play = document.createElement("button");
+    play.className = "play";
+    play.textContent = "▶︎";
+    play.style.display = existing ? "" : "none";
+
+    const err = document.createElement("p");
+    err.className = "err";
+
+    rec.onclick = async () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        return;
+      }
+      try {
+        await ensureMic();
+      } catch (e) {
+        err.textContent = "Micro refusé. Autorise le micro dans les réglages du navigateur.";
+        return;
+      }
+      const mime = pickMime();
+      recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const parts = [];
+      currentKey = key;
+      recorder.ondataavailable = (e) => e.data.size && parts.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(parts, { type: recorder.mimeType || "audio/mp4" });
+        await put(key, blob);
+        rec.classList.remove("on");
+        rec.textContent = "🎙️ Refaire";
+        play.style.display = "";
+        card.classList.add("done");
+        refresh();
+      };
+      recorder.start();
+      rec.classList.add("on");
+      rec.textContent = "⏹ Stop";
+    };
+
+    play.onclick = async () => {
+      const blob = await get(key);
+      if (!blob) return;
+      const a = new Audio(URL.createObjectURL(blob));
+      a.play();
+    };
+
+    row.append(rec, play);
+    card.append(row, err);
+    list.appendChild(card);
+  }
+}
+
+exportBtn.onclick = async () => {
+  exportBtn.textContent = "Préparation…";
+  const keys = await allKeys();
+  const files = [];
+  // On joint un index texte : sans lui, impossible de savoir quelle phrase
+  // correspond à quel fichier une fois l'archive ouverte.
+  let index = "Enregistrements Dari\n\n";
+  const byKey = {};
+  BATCHES.forEach((b) => b.items.forEach((it) => (byKey[keyOf(it)] = { it, b })));
+  for (const key of keys) {
+    const blob = await get(key);
+    if (!blob) continue;
+    const ext = (blob.type || "").includes("webm") ? "webm" : "m4a";
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    files.push({ name: key + "." + ext, data: buf });
+    const meta = byKey[key];
+    index += key + "." + ext + "  →  " + (meta ? meta.it.latin + "  (" + meta.it.fr + ")" : "?") + "\n";
+  }
+  files.push({ name: "index.txt", data: new TextEncoder().encode(index) });
+
+  const zip = makeZip(files);
+  const url = URL.createObjectURL(zip);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dari-audio.zip";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  exportBtn.textContent = "Envoyer";
+};
+
+select.onchange = renderBatch;
+
+openDB().then((d) => {
+  db = d;
+  renderBatch();
+  refresh();
+});
+</script>
+</body>
+</html>
