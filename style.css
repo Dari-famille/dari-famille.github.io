@@ -350,7 +350,21 @@ body {
 .kid-quiz-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 10px;
+}
+@media (max-width: 400px) {
+  /* Trois colonnes sur un petit écran ne laissent pas la place au mot :
+     on empile, chaque proposition occupant toute la largeur. */
+  .kid-quiz-grid { grid-template-columns: 1fr; }
+  .kid-quiz-tile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 12px 16px;
+  }
+  .kid-quiz-emoji { font-size: 2.6rem; }
+  .kid-quiz-mot { text-align: start; }
 }
 
 .kid-quiz-tile {
@@ -370,6 +384,18 @@ body {
 .kid-quiz-emoji {
   font-size: 3.2rem;
   display: block;
+  line-height: 1.1;
+}
+/* Le mot sous l'image : discret pour ne pas voler la vedette à l'emoji chez
+   les plus petits, mais parfaitement lisible pour ceux qui lisent. */
+.kid-quiz-mot {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 .kid-quiz-tile.correct {

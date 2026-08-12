@@ -9,6 +9,7 @@ qu'elle diverge silencieusement de index.html — d'où ce script.
 Usage :  python3 build.py
 """
 import base64
+import json
 import pathlib
 import re
 import sys
@@ -87,6 +88,43 @@ def main():
 
     build_relecture()
     build_enregistrement()
+    build_audio_index()
+
+
+def build_audio_index():
+    """Recense les enregistrements natifs présents dans audio/.
+
+    L'app interroge cet index avant de prononcer un mot : ce qui y figure est
+    dit par une vraie voix marocaine, le reste retombe sur la synthèse du
+    navigateur, qui ne parle que l'arabe standard. Il suffit donc de déposer
+    les fichiers de l'archive dans audio/ et de relancer ce script.
+    """
+    dossier = ROOT / "audio"
+    dossier.mkdir(exist_ok=True)
+
+    clips = {}
+    for f in sorted(dossier.iterdir()):
+        if f.suffix.lower() in (".m4a", ".mp3", ".webm", ".wav", ".ogg"):
+            clips[f.stem] = f.suffix.lstrip(".").lower()
+
+    index = {
+        "_lisezmoi": (
+            "Index des enregistrements natifs disponibles. La clé est dérivée du "
+            "texte de l'entrée (fr|latin), la valeur est l'extension du fichier. "
+            "Un mot absent de cet index est prononcé par la synthèse du "
+            "navigateur, en arabe standard. Fichier généré par build.py."
+        ),
+        "clips": clips,
+    }
+    (dossier / "index.json").write_text(
+        json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+    total = 338
+    print(f"audio/index.json : {len(clips)} enregistrement(s) sur ~{total} phrases")
+    if clips:
+        pct = round(len(clips) / total * 100)
+        print(f"  soit {pct}% du contenu avec une vraie voix")
 
 
 def build_enregistrement():

@@ -63,8 +63,58 @@ function saveScore() {
   document.getElementById("score-total").textContent = score.total;
 }
 
-// ---- Synthèse vocale ----
-function speak(arabicText) {
+// ---- Prononciation ----
+// La synthèse du navigateur ne parle que l'arabe standard : aucune voix
+// marocaine n'existe, et une locutrice native confirme que le rendu n'est pas
+// du darija. Un enfant apprend par imitation — lui faire entendre le mauvais
+// accent est pire que rien. On sert donc en priorité les enregistrements
+// réels, la synthèse ne servant plus que de dépannage là où il en manque.
+const AUDIO_DIR = "audio/";
+let audioIndex = null; // clés disponibles, chargées une fois
+
+function cleAudio(item) {
+  const raw = item.fr + "|" + item.latin;
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+  return "k" + (h >>> 0).toString(36);
+}
+
+// L'index évite d'aller chercher un fichier inexistant à chaque mot, ce qui
+// produirait une erreur réseau par clic et retarderait le repli.
+fetch(AUDIO_DIR + "index.json")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    audioIndex = d && d.clips ? d.clips : {};
+  })
+  .catch(() => {
+    audioIndex = {};
+  });
+
+let lecteur = null;
+
+function speak(cible) {
+  // Accepte aussi bien une entrée complète qu'une chaîne arabe, pour les
+  // phrases composées à la volée par le générateur.
+  const item = typeof cible === "string" ? null : cible;
+  const arabe = item ? item.arabic : cible;
+
+  if (item && audioIndex) {
+    const cle = cleAudio(item);
+    const ext = audioIndex[cle];
+    if (ext) {
+      if (lecteur) lecteur.pause();
+      lecteur = new Audio(AUDIO_DIR + cle + "." + ext);
+      // Un fichier absent ou illisible ne doit pas laisser l'utilisateur sans
+      // son : on repasse par la synthèse.
+      lecteur.onerror = () => parler(arabe);
+      lecteur.play().catch(() => parler(arabe));
+      return;
+    }
+  }
+  parler(arabe);
+}
+
+function parler(arabicText) {
   if (!("speechSynthesis" in window)) return;
   const utter = new SpeechSynthesisUtterance(arabicText);
   const voices = speechSynthesis.getVoices();
@@ -330,7 +380,7 @@ function renderKidCards(content) {
       <div class="kid-latin">${item.latin}</div>
       <div class="kid-fr">${item.fr}</div>
     `;
-    card.addEventListener("click", () => speak(item.arabic));
+    card.addEventListener("click", () => speak(item));
     grid.appendChild(card);
   });
   content.appendChild(grid);
@@ -351,7 +401,7 @@ function renderAdultList(content) {
       <button class="speak-btn">🔊 Écouter</button>
     `;
     card.querySelector(".speak-btn").addEventListener("click", () =>
-      speak(item.arabic)
+      speak(item)
     );
     grid.appendChild(card);
   });
@@ -407,7 +457,7 @@ function pickNewQuestion() {
   state.quiz.mode = state.mode;
 
   if (state.mode === "kid" || (state.mode === "adult" && state.quiz.direction === "ma2fr")) {
-    speak(correct.arabic);
+    speak(correct);
   }
 }
 
@@ -487,7 +537,7 @@ function renderKidQuizBody(box) {
     replayBtn.className = "quiz-next";
     replayBtn.style.marginBottom = "18px";
     replayBtn.textContent = "🔊 Réécouter";
-    replayBtn.addEventListener("click", () => speak(q.arabic));
+    replayBtn.addEventListener("click", () => speak(q));
     box.appendChild(replayBtn);
   }
 
@@ -496,7 +546,16 @@ function renderKidQuizBody(box) {
   state.quiz.options.forEach((opt) => {
     const btn = document.createElement("button");
     btn.className = "kid-quiz-tile";
-    btn.innerHTML = `<span class="kid-quiz-emoji">${opt.emoji}</span>`;
+    // L'image seule ne suffit pas : beaucoup de mots n'ont pas de
+    // représentation visuelle — 👋 vaut aussi bien « bonjour » que « au revoir »
+    // — et le mode s'adresse à des enfants de quatre à dix ans, dont la
+    // plupart lisent. L'emoji porte le sens pour les petits, le mot pour les
+    // autres, et les deux ensemble lèvent l'ambiguïté qui rendait certaines
+    // catégories injouables.
+    btn.innerHTML =
+      `<span class="kid-quiz-emoji">${opt.emoji}</span>` +
+      `<span class="kid-quiz-mot">${opt.fr}</span>`;
+    btn.setAttribute("aria-label", opt.fr);
     btn.addEventListener("click", () => {
       if (state.quiz.answered) return;
       state.quiz.answered = true;
@@ -519,7 +578,7 @@ function renderKidQuizBody(box) {
           b2.insertAdjacentHTML("beforeend", '<span class="kid-quiz-mark">❌</span>');
         }
       });
-      speak(q.arabic);
+      speak(q);
 
       // L'app ne s'utilise jamais seul à quatre ans : il y a un adulte à côté,
       // qui jusqu'ici n'avait aucun moyen de savoir ce qui venait d'être
@@ -539,7 +598,7 @@ function renderKidQuizBody(box) {
       replay.addEventListener("click", (ev) => {
         ev.stopPropagation();
         clearTimeout(state.quiz.autoNext); // on laisse le temps de répéter
-        speak(q.arabic);
+        speak(q);
       });
       reveal.appendChild(replay);
       optionsDiv.insertAdjacentElement("afterend", reveal);
@@ -609,7 +668,7 @@ function renderAdultQuizBody(box) {
     replayBtn.className = "quiz-next";
     replayBtn.style.marginBottom = "18px";
     replayBtn.textContent = "🔊 Réécouter";
-    replayBtn.addEventListener("click", () => speak(q.arabic));
+    replayBtn.addEventListener("click", () => speak(q));
     box.appendChild(replayBtn);
   }
 
@@ -627,7 +686,7 @@ function renderAdultQuizBody(box) {
       if (isCorrect) score.correct++;
       saveScore();
       if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
-      if (dir === "fr2ma") speak(q.arabic);
+      if (dir === "fr2ma") speak(q);
       document.querySelectorAll(".quiz-option").forEach((b2, i) => {
         const optData = state.quiz.options[i];
         if (optData === q) b2.classList.add("correct");
@@ -736,7 +795,7 @@ function renderSituations(content) {
     const btn = document.createElement("button");
     btn.className = "speak-btn";
     btn.textContent = "🔊 Écouter";
-    btn.addEventListener("click", () => speak(line.arabic));
+    btn.addEventListener("click", () => speak(line));
     card.insertBefore(btn, card.querySelector(".line-note"));
     list.appendChild(card);
   });
@@ -835,7 +894,7 @@ function onMemoryFlip(idx) {
   const card = m.cards[idx];
   // On fait entendre le mot dès qu'une carte le porte : c'est la
   // prononciation qu'on cherche à ancrer, pas l'orthographe latine.
-  if (card.kind === "audio" || card.kind === "latin") speak(card.item.arabic);
+  if (card.kind === "audio" || card.kind === "latin") speak(card.item);
   m.flipped.push(idx);
   renderContent();
 
