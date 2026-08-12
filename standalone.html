@@ -2747,7 +2747,31 @@ function pickNewQuestion() {
     const allItems = currentCategories().flatMap((c) => c.items);
     pool = allItems.filter((i) => i.latin !== correct.latin);
   }
-  const wrongs = shuffle(pool).slice(0, 2);
+
+  let wrongs;
+  if (state.mode === "kid") {
+    // Le quiz enfant se joue uniquement sur l'image : deux propositions
+    // partageant le même emoji rendent la question insoluble, l'enfant voyant
+    // deux fois la même chose. On impose donc des emojis tous distincts, en
+    // élargissant à toutes les catégories si la catégorie courante n'offre pas
+    // assez de variété — c'était le cas des nombres, tous marqués 🔢.
+    const vus = new Set([correct.emoji]);
+    const distincts = (liste) =>
+      shuffle(liste).filter((i) => {
+        if (vus.has(i.emoji)) return false;
+        vus.add(i.emoji);
+        return true;
+      });
+    wrongs = distincts(pool).slice(0, 2);
+    if (wrongs.length < 2) {
+      const ailleurs = currentCategories()
+        .flatMap((c) => c.items)
+        .filter((i) => i !== correct && !items.includes(i));
+      wrongs = wrongs.concat(distincts(ailleurs).slice(0, 2 - wrongs.length));
+    }
+  } else {
+    wrongs = shuffle(pool).slice(0, 2);
+  }
   const options = shuffle([correct, ...wrongs]);
 
   state.quiz.question = correct;
