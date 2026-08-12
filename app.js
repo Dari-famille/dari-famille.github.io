@@ -26,12 +26,16 @@ const state = {
   // La section par défaut suit le mode : le mode adulte affiche une liste,
   // le mode enfant des cartes. Un adulte qui revient tombait sinon sur les
   // grandes cartes illustrées destinées à un enfant.
-  section: savedMode() === "adult" ? "list" : "cards",
+  section: savedMode() === "adult" ? "list" : "quiz",
   quiz: {
     question: null,
     options: [],
     answered: false,
     direction: "fr2ma", // "fr2ma" | "ma2fr" (adulte uniquement)
+    // Bonnes réponses d'affilée. Un enfant ne lit pas un score cumulé en pied
+    // de page ; une série qui monte, si.
+    streak: 0,
+    bestStreak: 0,
   },
   builder: {
     verbId: null,
@@ -103,7 +107,7 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
     } else if (!cats.find((c) => c.id === state.categoryId)) {
       state.categoryId = cats[0].id;
     }
-    state.section = state.mode === "kid" ? "cards" : "list";
+    state.section = state.mode === "kid" ? "quiz" : "list";
     renderCategoryNav();
     renderContent();
   });
@@ -194,8 +198,14 @@ function renderContent() {
     state.section = "builder";
     renderContent();
   });
-  toggle.appendChild(listBtn);
-  toggle.appendChild(quizBtn);
+  if (state.mode === "kid") {
+    // Le quiz est ce qui retient un enfant : il passe devant les cartes.
+    toggle.appendChild(quizBtn);
+    toggle.appendChild(listBtn);
+  } else {
+    toggle.appendChild(listBtn);
+    toggle.appendChild(quizBtn);
+  }
   toggle.appendChild(memoryBtn);
   // Le générateur de phrases demande de lire des mots et de composer : hors
   // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
@@ -380,6 +390,18 @@ function renderQuiz(content) {
 function renderKidQuizBody(box) {
   const q = state.quiz.question;
 
+  // La série se voit au-dessus de la question : c'est ce qui donne envie
+  // d'enchaîner, et un enfant ne va pas la chercher en pied de page.
+  if (state.quiz.streak > 0) {
+    const streakEl = document.createElement("div");
+    streakEl.className = "kid-streak";
+    streakEl.textContent =
+      state.quiz.streak >= 5
+        ? `🔥 ${state.quiz.streak} d'affilée ! Bravo !`
+        : `${"⭐".repeat(state.quiz.streak)} ${state.quiz.streak} d'affilée`;
+    box.appendChild(streakEl);
+  }
+
   const prompt = document.createElement("div");
   prompt.className = "quiz-prompt";
   prompt.innerHTML = `<span class="quiz-emoji">🔊</span>Écoute et trouve l'image !`;
@@ -404,6 +426,10 @@ function renderKidQuizBody(box) {
       score.total++;
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
+      // Une erreur remet la série à zéro : sans cela le compteur ne veut plus
+      // rien dire, et l'enfant s'en aperçoit tout de suite.
+      state.quiz.streak = isCorrect ? state.quiz.streak + 1 : 0;
+      state.quiz.bestStreak = Math.max(state.quiz.bestStreak, state.quiz.streak);
       saveScore();
       if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       document.querySelectorAll(".kid-quiz-tile").forEach((b2, i) => {
