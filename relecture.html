@@ -832,6 +832,83 @@ const SITUATIONS = [
   },
 
   {
+    id: "questions-quon-vous-pose",
+    label: "Les questions qu'on va vous poser",
+    emoji: "❓",
+    audience: "adult",
+    free: false,
+    intro:
+      "Le pendant adulte de ce que votre enfant entendra. On vous posera ces " +
+      "questions dès le premier repas, souvent plusieurs fois, et par des gens " +
+      "différents. Les reconnaître suffit : personne n'attend une réponse " +
+      "élaborée, on attend que vous ayez compris.",
+    lines: [
+      {
+        fr: "Comment tu t'appelles ?",
+        latin: "Chnou smitek ?",
+        arabic: "شنو سميتك؟",
+        note: "Répondez « smiti… » suivi de votre prénom.",
+      },
+      {
+        fr: "Tu viens d'où ?",
+        latin: "Mnin nta ? (homme) / Mnin nti ? (femme)",
+        arabic: "منين نتا؟ / منين نتي؟",
+        check: true,
+        note: "Réponse : « ana men Fransa » — je viens de France.",
+      },
+      {
+        fr: "Tu as des enfants ?",
+        latin: "3endek drari ?",
+        arabic: "عندك دراري؟",
+        check: true,
+        note:
+          "Question posée très tôt et sans détour — elle n'a rien d'indiscret " +
+          "ici. « Iyeh, 3endi weld » : oui, j'ai un fils.",
+      },
+      {
+        fr: "Tu restes combien de temps ?",
+        latin: "Ghadi tbqa chhal ?",
+        arabic: "غادي تبقى شحال؟",
+        check: true,
+      },
+      {
+        fr: "Tu aimes le Maroc ?",
+        latin: "3ejbek lmghrib ?",
+        arabic: "عجبك المغرب؟",
+        check: true,
+        note:
+          "La réponse attendue est enthousiaste. « 3ejbni bezzaf » suffit — " +
+          "une réponse tiède serait entendue comme un reproche.",
+      },
+      {
+        fr: "Tu as mangé ?",
+        latin: "Klti ?",
+        arabic: "كليتي؟",
+        check: true,
+        note:
+          "Ce n'est pas une question, c'est une invitation. Répondre « oui » " +
+          "ne vous dispensera pas d'être servi.",
+      },
+      {
+        fr: "Tu parles darija ?",
+        latin: "Katehder darija ?",
+        arabic: "كتهضر دارجة؟",
+        check: true,
+        note: "Le moment d'utiliser « chwiya » — un peu. Toujours bien reçu.",
+      },
+      {
+        fr: "Tu reviens quand ?",
+        latin: "Imta ghadi terje3 ?",
+        arabic: "امتى غادي ترجع؟",
+        check: true,
+        note:
+          "Posée au moment du départ, souvent avec émotion. « Qriban, " +
+          "inchallah » est la seule réponse à donner.",
+      },
+    ],
+  },
+
+  {
     id: "prendre-conge",
     label: "Prendre congé",
     emoji: "👋",
