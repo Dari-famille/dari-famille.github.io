@@ -589,6 +589,24 @@ body {
   display: inline-block;
 }
 
+/* Appel à retours : la voix de synthèse n'a pas l'accent marocain et le
+   vocabulaire n'est pas entièrement relu. Le dire franchement vaut mieux que
+   de le laisser découvrir — et transforme un défaut en invitation. */
+.wip {
+  max-width: 480px;
+  margin: 14px auto 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--saffron) 16%, transparent);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.wip a {
+  color: var(--terracotta);
+  font-weight: 700;
+}
+
 /* Consigne du mode Enfant : elle précède la grille et doit se voir sans
    effort, sans pour autant occuper la place d'une carte. */
 .kid-hint {
