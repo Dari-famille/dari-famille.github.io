@@ -837,3 +837,48 @@ body {
   cursor: pointer;
   opacity: 0.75;
 }
+
+/* Révélation du mot après la réponse, en mode Enfant.
+   Elle s'adresse à l'adulte qui accompagne : lui seul peut répéter le mot,
+   corriger la prononciation et faire le lien avec la vraie vie. */
+.quiz-reveal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 2px dashed color-mix(in srgb, var(--majorelle) 35%, transparent);
+  animation: reveal-in 0.25s ease;
+}
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-reveal { animation: none; }
+}
+.reveal-emoji { font-size: 1.9rem; line-height: 1; }
+.reveal-latin {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--terracotta);
+}
+.reveal-fr {
+  font-size: 0.95rem;
+  color: var(--muted);
+  flex-basis: 100%;
+}
+.reveal-replay {
+  border: none;
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+  border-radius: 999px;
+  min-width: 46px;
+  min-height: 46px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}

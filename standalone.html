@@ -852,6 +852,51 @@ body {
   cursor: pointer;
   opacity: 0.75;
 }
+
+/* Révélation du mot après la réponse, en mode Enfant.
+   Elle s'adresse à l'adulte qui accompagne : lui seul peut répéter le mot,
+   corriger la prononciation et faire le lien avec la vraie vie. */
+.quiz-reveal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 2px dashed color-mix(in srgb, var(--majorelle) 35%, transparent);
+  animation: reveal-in 0.25s ease;
+}
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-reveal { animation: none; }
+}
+.reveal-emoji { font-size: 1.9rem; line-height: 1; }
+.reveal-latin {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--terracotta);
+}
+.reveal-fr {
+  font-size: 0.95rem;
+  color: var(--muted);
+  flex-basis: 100%;
+}
+.reveal-replay {
+  border: none;
+  background: var(--majorelle);
+  color: var(--majorelle-ink);
+  border-radius: 999px;
+  min-width: 46px;
+  min-height: 46px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -2868,6 +2913,30 @@ function renderKidQuizBody(box) {
         }
       });
       speak(q.arabic);
+
+      // L'app ne s'utilise jamais seul à quatre ans : il y a un adulte à côté,
+      // qui jusqu'ici n'avait aucun moyen de savoir ce qui venait d'être
+      // demandé — donc ni d'aider, ni de répéter. Le mot s'affiche après la
+      // réponse : trop tôt, un enfant qui lit contournerait l'écoute.
+      const reveal = document.createElement("div");
+      reveal.className = "quiz-reveal";
+      reveal.innerHTML = `
+        <span class="reveal-emoji">${q.emoji}</span>
+        <span class="reveal-latin">${q.latin}</span>
+        <span class="reveal-fr">${q.fr}</span>
+      `;
+      const replay = document.createElement("button");
+      replay.className = "reveal-replay";
+      replay.textContent = "🔊";
+      replay.setAttribute("aria-label", "Réécouter le mot");
+      replay.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        clearTimeout(state.quiz.autoNext); // on laisse le temps de répéter
+        speak(q.arabic);
+      });
+      reveal.appendChild(replay);
+      optionsDiv.insertAdjacentElement("afterend", reveal);
+
       nextBtn.style.display = "inline-block";
       // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant
       // de quatre ans ne fait pas défiler pour trouver un bouton, il s'arrête.
@@ -2879,7 +2948,7 @@ function renderKidQuizBody(box) {
         if (state.section !== "quiz" || state.mode !== "kid") return;
         pickNewQuestion();
         renderContent();
-      }, isCorrect ? 1700 : 2600);
+      }, isCorrect ? 2600 : 3600);
     });
     optionsDiv.appendChild(btn);
   });

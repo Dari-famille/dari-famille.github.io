@@ -470,6 +470,30 @@ function renderKidQuizBody(box) {
         }
       });
       speak(q.arabic);
+
+      // L'app ne s'utilise jamais seul à quatre ans : il y a un adulte à côté,
+      // qui jusqu'ici n'avait aucun moyen de savoir ce qui venait d'être
+      // demandé — donc ni d'aider, ni de répéter. Le mot s'affiche après la
+      // réponse : trop tôt, un enfant qui lit contournerait l'écoute.
+      const reveal = document.createElement("div");
+      reveal.className = "quiz-reveal";
+      reveal.innerHTML = `
+        <span class="reveal-emoji">${q.emoji}</span>
+        <span class="reveal-latin">${q.latin}</span>
+        <span class="reveal-fr">${q.fr}</span>
+      `;
+      const replay = document.createElement("button");
+      replay.className = "reveal-replay";
+      replay.textContent = "🔊";
+      replay.setAttribute("aria-label", "Réécouter le mot");
+      replay.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        clearTimeout(state.quiz.autoNext); // on laisse le temps de répéter
+        speak(q.arabic);
+      });
+      reveal.appendChild(replay);
+      optionsDiv.insertAdjacentElement("afterend", reveal);
+
       nextBtn.style.display = "inline-block";
       // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant
       // de quatre ans ne fait pas défiler pour trouver un bouton, il s'arrête.
@@ -481,7 +505,7 @@ function renderKidQuizBody(box) {
         if (state.section !== "quiz" || state.mode !== "kid") return;
         pickNewQuestion();
         renderContent();
-      }, isCorrect ? 1700 : 2600);
+      }, isCorrect ? 2600 : 3600);
     });
     optionsDiv.appendChild(btn);
   });
