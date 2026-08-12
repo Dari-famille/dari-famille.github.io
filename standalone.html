@@ -534,6 +534,40 @@ body {
   padding: 20px;
   overflow-y: auto;
 }
+
+/* Téléphone tenu à l'horizontale : la fenêtre ne fait plus que ~375 px de
+   haut. Centré, l'accueil se retrouvait rogné des deux côtés et son dernier
+   bouton hors champ — défilable, mais rien ne le laissait deviner. On aligne
+   en haut et on resserre. */
+@media (max-height: 560px) {
+  .welcome {
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .welcome-box {
+    padding: 18px 20px 16px;
+  }
+  .welcome-star { font-size: 1.8rem; }
+  .welcome-box h2 { font-size: 1.25rem; margin: 6px 0 4px; }
+  .welcome-lead { margin-bottom: 14px; font-size: 0.9rem; }
+  .welcome-q { margin-bottom: 8px; }
+  .welcome-choices { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .welcome-btn { padding: 12px 10px; }
+  .welcome-emoji { font-size: 1.5rem; }
+  .welcome-skip { margin-top: 10px; }
+}
+
+/* Écran vraiment court (téléphone à l'horizontale) : la phrase d'accroche
+   répète la signature déjà affichée dans l'en-tête, on la sacrifie pour que
+   les trois boutons tiennent sans défilement. */
+@media (max-height: 430px) {
+  .welcome-lead { display: none; }
+  .welcome-box { padding: 14px 18px 12px; }
+  .welcome-star { display: none; }
+  .welcome-box h2 { font-size: 1.15rem; margin: 0 0 6px; }
+  .welcome-btn { padding: 10px 8px; }
+  .welcome-sub { display: none; }
+}
 .welcome-box {
   background: var(--surface);
   border-radius: 22px;
