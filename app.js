@@ -37,6 +37,7 @@ const state = {
     streak: 0,
     bestStreak: 0,
     autoNext: null, // minuterie d'enchaînement en mode Enfant
+    mode: null, // mode dans lequel la question a été tirée
   },
   builder: {
     verbId: null,
@@ -402,6 +403,7 @@ function pickNewQuestion() {
   state.quiz.question = correct;
   state.quiz.options = options;
   state.quiz.answered = false;
+  state.quiz.mode = state.mode;
 
   if (state.mode === "kid" || (state.mode === "adult" && state.quiz.direction === "ma2fr")) {
     speak(correct.arabic);
@@ -418,8 +420,20 @@ function shuffle(arr) {
 }
 
 function renderQuiz(content) {
-  if (!state.quiz.question || state.categoryId !== state.quiz.catId) {
+  // On retire une nouvelle question dès que la question affichée n'est plus
+  // valable : catégorie changée, mode changé (les deux modes ne posent pas la
+  // même question), ou question déjà répondue. Sans ce dernier cas, revenir au
+  // quiz après un aller-retour entre modes laissait l'écran figé sur une
+  // question résolue, dont les tuiles ne réagissaient plus — un enfant tape et
+  // rien ne se passe, sans aucun moyen de s'en sortir.
+  if (
+    !state.quiz.question ||
+    state.categoryId !== state.quiz.catId ||
+    state.mode !== state.quiz.mode ||
+    state.quiz.answered
+  ) {
     state.quiz.catId = state.categoryId;
+    state.quiz.mode = state.mode;
     pickNewQuestion();
   }
 
