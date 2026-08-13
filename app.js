@@ -59,7 +59,9 @@ const scoreKey = "darija-app-score";
 // localStorage ne se contente pas de renvoyer null quand il est refusé
 // (blocage total des cookies, navigation privée sur certains Safari, page
 // servie dans un cadre cloisonné) : il LÈVE une exception. Sans ce filet,
-// l'app entière ne démarrait pas dans ces conditions, écran blanc compris.
+// l'app ne démarrait pas du tout dans ces conditions — l'en-tête et le pied
+// de page s'affichaient, étant du HTML statique, mais la barre de catégories
+// et le contenu restaient vides. Symptôme trompeur : la page a l'air chargée.
 const score = (() => {
   try {
     return JSON.parse(localStorage.getItem(scoreKey) || '{"correct":0,"total":0}');
@@ -113,11 +115,19 @@ function speak(cible) {
   const item = typeof cible === "string" ? null : cible;
   const arabe = item ? item.arabic : cible;
 
+  // On coupe systématiquement ce qui est en cours, dans les deux canaux : un
+  // enregistrement et une synthèse pouvaient se chevaucher, chacun n'annulant
+  // que le sien.
+  if (lecteur) {
+    lecteur.pause();
+    lecteur = null;
+  }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+
   if (item && audioIndex) {
     const cle = cleAudio(item);
     const ext = audioIndex[cle];
     if (ext) {
-      if (lecteur) lecteur.pause();
       lecteur = new Audio(AUDIO_DIR + cle + "." + ext);
       // Un fichier absent ou illisible ne doit pas laisser l'utilisateur sans
       // son : on repasse par la synthèse.
@@ -180,6 +190,25 @@ function getCategory() {
   return CATEGORIES.find((c) => c.id === state.categoryId);
 }
 
+// ---- Navigation ----
+// Toute action qui change ce qui est affiché doit ramener la vue en haut.
+// Sans cela, changer de catégorie après avoir fait défiler laissait
+// l'utilisateur au milieu du vide : le nouveau contenu s'affichait bien, mais
+// plus haut que son point de vue — l'action semblait sans effet. Le défilement
+// est instantané et non animé : une transition douce donnerait l'impression
+// que la page bouge toute seule.
+function naviguerVers(action) {
+  // Naviguer annule aussi l'enchaînement automatique du quiz : quitter l'écran
+  // rend caduque la question suivante, et c'est le seul passage obligé de
+  // toutes les navigations — donc le bon endroit pour ne rien oublier.
+  if (state.quiz.autoNext) {
+    clearTimeout(state.quiz.autoNext);
+    state.quiz.autoNext = null;
+  }
+  action();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
 // ---- Navigation par mode ----
 document.querySelectorAll(".mode-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -198,8 +227,10 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
       state.categoryId = cats[0].id;
     }
     state.section = state.mode === "kid" ? "quiz" : "list";
-    renderCategoryNav();
-    renderContent();
+    naviguerVers(() => {
+      renderCategoryNav();
+      renderContent();
+    });
   });
 });
 
@@ -232,8 +263,10 @@ function renderCategoryNav() {
     favBtn.addEventListener("click", () => {
       state.categoryId = FAVORIS_ID;
       state.query = "";
-      renderCategoryNav();
-      renderContent();
+      naviguerVers(() => {
+        renderCategoryNav();
+        renderContent();
+      });
     });
     nav.appendChild(favBtn);
   }
@@ -247,8 +280,10 @@ function renderCategoryNav() {
     sitBtn.addEventListener("click", () => {
       state.categoryId = SITUATIONS_ID;
       state.situationId = null;
-      renderCategoryNav();
-      renderContent();
+      naviguerVers(() => {
+        renderCategoryNav();
+        renderContent();
+      });
     });
     nav.appendChild(sitBtn);
   }
@@ -261,8 +296,10 @@ function renderCategoryNav() {
     btn.addEventListener("click", () => {
       state.categoryId = cat.id;
       state.section = state.mode === "kid" ? "quiz" : "list";
-      renderCategoryNav();
-      renderContent();
+      naviguerVers(() => {
+        renderCategoryNav();
+        renderContent();
+      });
     });
     nav.appendChild(btn);
   });
@@ -311,23 +348,23 @@ function renderContent() {
   const listSection = state.mode === "kid" ? "cards" : "list";
   const listBtn = makeToggleBtn(listLabel, state.section === listSection, () => {
     state.section = listSection;
-    renderContent();
+    naviguerVers(renderContent);
   });
   const quizBtn = makeToggleBtn("🎯 Quiz", state.section === "quiz", () => {
     clearTimeout(state.quiz.autoNext);
     state.section = "quiz";
     state.quiz.answered = false;
-    renderContent();
+    naviguerVers(renderContent);
   });
   const memoryBtn = makeToggleBtn("🧠 Mémoire", state.section === "memory", () => {
     clearTimeout(state.quiz.autoNext);
     state.section = "memory";
     buildMemoryDeck();
-    renderContent();
+    naviguerVers(renderContent);
   });
   const builderBtn = makeToggleBtn("🧩 Phrase", state.section === "builder", () => {
     state.section = "builder";
-    renderContent();
+    naviguerVers(renderContent);
   });
   if (state.mode === "kid") {
     // Le quiz est ce qui retient un enfant : il passe devant les cartes.
@@ -453,6 +490,16 @@ function renderAdultList(content) {
 
 // ---- Quiz ----
 function pickNewQuestion() {
+  // Une nouvelle question rend caduc tout enchaînement automatique en attente.
+  // Sans cette annulation, toucher « Suivant » avant la fin du délai faisait
+  // tirer deux questions coup sur coup : deux mots prononcés à la suite et
+  // l'écran qui saute. On l'annule ici plutôt qu'à chaque appel, pour ne plus
+  // avoir à y penser — il y en avait cinq, dont quatre non protégés.
+  if (state.quiz.autoNext) {
+    clearTimeout(state.quiz.autoNext);
+    state.quiz.autoNext = null;
+  }
+
   const cat = getCategory();
   const items = cat.items;
   // La révision espacée choisit le mot : ce qui est dû d'abord, puis ce qui
@@ -794,8 +841,7 @@ function renderSituations(content) {
       `;
       card.addEventListener("click", () => {
         state.situationId = sit.id;
-        renderContent();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        naviguerVers(renderContent);
       });
       grid.appendChild(card);
     });
@@ -808,7 +854,7 @@ function renderSituations(content) {
   back.textContent = "← Toutes les situations";
   back.addEventListener("click", () => {
     state.situationId = null;
-    renderContent();
+    naviguerVers(renderContent);
   });
   content.appendChild(back);
 
