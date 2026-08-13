@@ -1185,3 +1185,15 @@ body {
     color: var(--muted);
   }
 }
+
+/* Mention de mesure d'audience : présente parce que l'exemption de
+   consentement suppose que le visiteur soit informé, discrète parce qu'elle
+   n'apporte rien à l'usage. */
+.mesure {
+  max-width: 480px;
+  margin: 10px auto 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: 0.8;
+}

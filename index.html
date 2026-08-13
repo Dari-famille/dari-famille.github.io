@@ -39,6 +39,7 @@
     <p class="wip">Dari est en construction, et se corrige avec ceux qui s'en servent.
     Un mot qui sonne faux, une phrase qui manque, une situation qu'on a oubliée&nbsp;?
     <a href="mailto:dari.famille@proton.me?subject=Dari">Écrivez-nous</a> — on lit tout.</p>
+    <p class="mesure">Une mesure d'audience anonyme compte les visites, sans cookie ni donnée personnelle.</p>
     <p class="audio-disclaimer">🔊 Le bouton « Écouter » utilise la voix arabe du navigateur : prononciation approximative, ce n'est pas un accent marocain authentique. Pour le vrai accent, rien ne remplace une oreille marocaine !</p>
   </footer>
 
@@ -90,5 +91,13 @@
       document.body.appendChild(bar);
     }
   </script>
+  <!-- Mesure d'audience Cloudflare : sans cookie, sans identifiant de suivi,
+       sans données personnelles conservées. Elle entre dans l'exemption de
+       consentement prévue par la CNIL pour la mesure d'audience limitée au
+       site, ce qui évite un bandeau. Chargée en module donc non bloquante :
+       si elle échoue — hors-ligne, bloqueur de publicité — l'app fonctionne
+       exactement pareil. -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon='{"token": "dd35a9f6fcd44fedbbea67fbd6055a60"}'></script>
 </body>
 </html>

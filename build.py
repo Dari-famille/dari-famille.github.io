@@ -69,6 +69,20 @@ def main():
         r'\s*<script>\s*// Le service worker.*?</script>', "", html, flags=re.DOTALL
     )
 
+    # La mesure d'audience n'a rien à faire ici : standalone.html se transmet
+    # de main en main et s'ouvre en file://, où elle ne compterait rien
+    # d'exploitable tout en émettant une requête vers l'extérieur. Un fichier
+    # « autonome » qui appelle un serveur au chargement ne l'est pas.
+    html = re.sub(
+        r"\s*<!-- Mesure d'audience Cloudflare.*?</script>", "", html, flags=re.DOTALL
+    )
+    if "cloudflareinsights" in html:
+        sys.exit(
+            "La balise de mesure d'audience n'a pas pu être retirée de "
+            "standalone.html : le commentaire qui la précède a dû changer. "
+            "Corriger le motif dans build.py avant de publier."
+        )
+
     # Icônes en data URI, pour que le fichier reste réellement autonome.
     for attr_pattern, icon in (
         (r'href="icons/favicon-32\.png"', "icons/favicon-32.png"),

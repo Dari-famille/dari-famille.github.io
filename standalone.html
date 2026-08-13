@@ -1200,6 +1200,18 @@ body {
     color: var(--muted);
   }
 }
+
+/* Mention de mesure d'audience : présente parce que l'exemption de
+   consentement suppose que le visiteur soit informé, discrète parce qu'elle
+   n'apporte rien à l'usage. */
+.mesure {
+  max-width: 480px;
+  margin: 10px auto 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: 0.8;
+}
 </style>
 </head>
 <body>
@@ -1224,6 +1236,7 @@ body {
     <p class="wip">Dari est en construction, et se corrige avec ceux qui s'en servent.
     Un mot qui sonne faux, une phrase qui manque, une situation qu'on a oubliée&nbsp;?
     <a href="mailto:dari.famille@proton.me?subject=Dari">Écrivez-nous</a> — on lit tout.</p>
+    <p class="mesure">Une mesure d'audience anonyme compte les visites, sans cookie ni donnée personnelle.</p>
     <p class="audio-disclaimer">🔊 Le bouton « Écouter » utilise la voix arabe du navigateur : prononciation approximative, ce n'est pas un accent marocain authentique. Pour le vrai accent, rien ne remplace une oreille marocaine !</p>
   </footer>
   <script>
