@@ -151,6 +151,66 @@ function parler(arabicText) {
   utter.rate = 0.85;
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
+  signalerVoixDeSynthese();
+}
+
+// La synthèse du téléphone lit en arabe standard, jamais en darija. Sans
+// explication, l'utilisateur en conclut que l'app se trompe de langue — c'est
+// la toute première remarque qu'on nous ait faite. On le dit donc au moment
+// où il l'entend, et non dans un pied de page que personne ne déroule.
+//
+// Une seule fois, et seulement quand aucune voix marocaine n'a encore été
+// enregistrée pour ce mot : à mesure que les enregistrements arrivent, speak()
+// cesse de passer par ici et le message s'efface de lui-même.
+const NOTE_VOIX_KEY = "dari-note-voix-v1";
+
+function noteVoixDejaVue() {
+  try {
+    return localStorage.getItem(NOTE_VOIX_KEY) === "1";
+  } catch (e) {
+    // Navigation privée : la note réapparaîtra, ce qui vaut mieux que planter.
+    return false;
+  }
+}
+
+function signalerVoixDeSynthese() {
+  // Sans voix arabe installée, rien n'est prononcé : annoncer un accent serait
+  // absurde, un repli lisible est déjà affiché à la place.
+  if (!voixArabeDisponible) return;
+  if (noteVoixDejaVue() || document.querySelector(".voice-note")) return;
+  // Deux bandeaux occupent déjà le bas de l'écran. Plutôt que de les
+  // chevaucher, on attend la prochaine écoute — la note n'est pas urgente.
+  if (document.querySelector(".install-bar, .update-bar")) return;
+
+  try {
+    localStorage.setItem(NOTE_VOIX_KEY, "1");
+  } catch (e) {
+    /* sans stockage, la note réapparaîtra : sans conséquence */
+  }
+
+  const note = document.createElement("div");
+  note.className = "voice-note";
+  note.setAttribute("role", "status");
+
+  const texte = document.createElement("p");
+  texte.innerHTML =
+    "🎙️ Cette voix est celle de votre téléphone : elle lit en <strong>arabe " +
+    "classique</strong>, pas en darija. Nous enregistrons en ce moment les " +
+    "vraies voix marocaines, mot par mot — elles remplaceront celle-ci au fur " +
+    "et à mesure.";
+  note.appendChild(texte);
+
+  const fermer = document.createElement("button");
+  fermer.type = "button";
+  fermer.textContent = "J'ai compris";
+  fermer.addEventListener("click", () => note.remove());
+  note.appendChild(fermer);
+
+  document.body.appendChild(note);
+  // Elle ne doit pas rester en travers de l'écran si personne n'y touche.
+  setTimeout(() => {
+    if (note.isConnected) note.remove();
+  }, 14000);
 }
 // Sans voix arabe installée — courant sur Android et sur beaucoup de postes —
 // « Écouter » ne produit rien et le quiz enfant, entièrement fondé sur

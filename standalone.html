@@ -1212,6 +1212,63 @@ body {
   color: var(--muted);
   opacity: 0.8;
 }
+
+/* Note sur la voix de synthèse : elle apparaît à la première écoute, là où
+   l'utilisateur vient d'entendre l'arabe classique, plutôt qu'en pied de page.
+   Volontairement sous les deux bandeaux existants (z-index 40 et 45) : elle
+   informe, elle ne réclame rien. */
+.voice-note {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 38;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--ink);
+  border-top: 3px solid var(--saffron);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
+  animation: voice-note-in 0.25s ease-out;
+}
+
+.voice-note p {
+  flex: 1;
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.voice-note button {
+  flex: 0 0 auto;
+  border: 2px solid var(--majorelle);
+  border-radius: 999px;
+  padding: 9px 16px;
+  min-height: 44px;
+  background: var(--surface);
+  color: var(--majorelle);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes voice-note-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-note { animation: none; }
+}
+
+@media (max-width: 420px) {
+  .voice-note {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
 </style>
 </head>
 <body>
@@ -1237,7 +1294,10 @@ body {
     Un mot qui sonne faux, une phrase qui manque, une situation qu'on a oubliée&nbsp;?
     <a href="mailto:dari.famille@proton.me?subject=Dari">Écrivez-nous</a> — on lit tout.</p>
     <p class="mesure">Une mesure d'audience anonyme compte les visites, sans cookie ni donnée personnelle.</p>
-    <p class="audio-disclaimer">🔊 Le bouton « Écouter » utilise la voix arabe du navigateur : prononciation approximative, ce n'est pas un accent marocain authentique. Pour le vrai accent, rien ne remplace une oreille marocaine !</p>
+    <p class="audio-disclaimer">🎙️ <strong>La prononciation, on y travaille en ce moment.</strong>
+    Tant qu'un mot n'a pas été enregistré, « Écouter » utilise la voix du téléphone,
+    qui lit en arabe classique et non en darija. Nous enregistrons les vraies voix
+    marocaines une par une : chaque mise à jour en apporte de nouvelles.</p>
   </footer>
   <script>
 // Contenu pédagogique : Darija (arabe marocain)
@@ -2987,6 +3047,66 @@ function parler(arabicText) {
   utter.rate = 0.85;
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
+  signalerVoixDeSynthese();
+}
+
+// La synthèse du téléphone lit en arabe standard, jamais en darija. Sans
+// explication, l'utilisateur en conclut que l'app se trompe de langue — c'est
+// la toute première remarque qu'on nous ait faite. On le dit donc au moment
+// où il l'entend, et non dans un pied de page que personne ne déroule.
+//
+// Une seule fois, et seulement quand aucune voix marocaine n'a encore été
+// enregistrée pour ce mot : à mesure que les enregistrements arrivent, speak()
+// cesse de passer par ici et le message s'efface de lui-même.
+const NOTE_VOIX_KEY = "dari-note-voix-v1";
+
+function noteVoixDejaVue() {
+  try {
+    return localStorage.getItem(NOTE_VOIX_KEY) === "1";
+  } catch (e) {
+    // Navigation privée : la note réapparaîtra, ce qui vaut mieux que planter.
+    return false;
+  }
+}
+
+function signalerVoixDeSynthese() {
+  // Sans voix arabe installée, rien n'est prononcé : annoncer un accent serait
+  // absurde, un repli lisible est déjà affiché à la place.
+  if (!voixArabeDisponible) return;
+  if (noteVoixDejaVue() || document.querySelector(".voice-note")) return;
+  // Deux bandeaux occupent déjà le bas de l'écran. Plutôt que de les
+  // chevaucher, on attend la prochaine écoute — la note n'est pas urgente.
+  if (document.querySelector(".install-bar, .update-bar")) return;
+
+  try {
+    localStorage.setItem(NOTE_VOIX_KEY, "1");
+  } catch (e) {
+    /* sans stockage, la note réapparaîtra : sans conséquence */
+  }
+
+  const note = document.createElement("div");
+  note.className = "voice-note";
+  note.setAttribute("role", "status");
+
+  const texte = document.createElement("p");
+  texte.innerHTML =
+    "🎙️ Cette voix est celle de votre téléphone : elle lit en <strong>arabe " +
+    "classique</strong>, pas en darija. Nous enregistrons en ce moment les " +
+    "vraies voix marocaines, mot par mot — elles remplaceront celle-ci au fur " +
+    "et à mesure.";
+  note.appendChild(texte);
+
+  const fermer = document.createElement("button");
+  fermer.type = "button";
+  fermer.textContent = "J'ai compris";
+  fermer.addEventListener("click", () => note.remove());
+  note.appendChild(fermer);
+
+  document.body.appendChild(note);
+  // Elle ne doit pas rester en travers de l'écran si personne n'y touche.
+  setTimeout(() => {
+    if (note.isConnected) note.remove();
+  }, 14000);
 }
 // Sans voix arabe installée — courant sur Android et sur beaucoup de postes —
 // « Écouter » ne produit rien et le quiz enfant, entièrement fondé sur

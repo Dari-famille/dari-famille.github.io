@@ -1197,3 +1197,60 @@ body {
   color: var(--muted);
   opacity: 0.8;
 }
+
+/* Note sur la voix de synthèse : elle apparaît à la première écoute, là où
+   l'utilisateur vient d'entendre l'arabe classique, plutôt qu'en pied de page.
+   Volontairement sous les deux bandeaux existants (z-index 40 et 45) : elle
+   informe, elle ne réclame rien. */
+.voice-note {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 38;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--ink);
+  border-top: 3px solid var(--saffron);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
+  animation: voice-note-in 0.25s ease-out;
+}
+
+.voice-note p {
+  flex: 1;
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.voice-note button {
+  flex: 0 0 auto;
+  border: 2px solid var(--majorelle);
+  border-radius: 999px;
+  padding: 9px 16px;
+  min-height: 44px;
+  background: var(--surface);
+  color: var(--majorelle);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes voice-note-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-note { animation: none; }
+}
+
+@media (max-width: 420px) {
+  .voice-note {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
