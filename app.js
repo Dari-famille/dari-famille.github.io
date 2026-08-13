@@ -264,22 +264,30 @@ function renderContent() {
 
   renderSearchBar(content);
 
+  // Tout ce qui n'est pas la recherche vit dans ce conteneur, que la frappe
+  // peut masquer d'un coup. Sans lui, les résultats s'ajoutaient sous la liste
+  // existante et se retrouvaient hors écran : la recherche paraissait morte.
+  const body = document.createElement("div");
+  body.id = "main-body";
+  content.appendChild(body);
+
   // Une recherche en cours l'emporte sur la catégorie choisie : c'est ce que
   // l'utilisateur vient de demander.
   if (state.query.trim().length >= 2) {
+    body.style.display = "none";
     renderResults(content);
     return;
   }
 
   if (state.categoryId === FAVORIS_ID) {
-    renderFavoris(content);
+    renderFavoris(body);
     return;
   }
 
   // Les situations ont leur propre mise en page : ni cartes, ni quiz, ni
   // barre de progression — on sort avant de construire tout ça.
   if (state.categoryId === SITUATIONS_ID) {
-    renderSituations(content);
+    renderSituations(body);
     return;
   }
 
@@ -320,21 +328,21 @@ function renderContent() {
   // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
   // décourage plus qu'il n'apprend.
   if (state.mode !== "kid") toggle.appendChild(builderBtn);
-  content.appendChild(toggle);
+  body.appendChild(toggle);
 
-  renderProgress(content);
-  renderFeedbackPrompt(content);
+  renderProgress(body);
+  renderFeedbackPrompt(body);
 
   if (state.section === "quiz") {
-    renderQuiz(content);
+    renderQuiz(body);
   } else if (state.section === "memory") {
-    renderMemory(content);
+    renderMemory(body);
   } else if (state.section === "builder") {
-    renderBuilder(content);
+    renderBuilder(body);
   } else if (state.mode === "kid") {
-    renderKidCards(content);
+    renderKidCards(body);
   } else {
-    renderAdultList(content);
+    renderAdultList(body);
   }
 }
 
@@ -1188,7 +1196,12 @@ function renderSearchBar(content) {
     if (zone) zone.remove();
     const reste = document.getElementById("main-body");
     if (reste) reste.style.display = state.query.trim().length >= 2 ? "none" : "";
-    if (state.query.trim().length >= 2) renderResults(content, true);
+    if (state.query.trim().length >= 2) {
+      renderResults(content, true);
+      // On remonte : après avoir fait défiler la liste, les résultats
+      // s'afficheraient au-dessus du point de vue courant.
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
   });
 
   wrap.appendChild(input);
