@@ -4,7 +4,7 @@
 //
 // IMPORTANT : incrémenter CACHE_VERSION à chaque modification de data.js,
 // app.js ou style.css, sinon les visiteurs gardent l'ancienne version.
-const CACHE_VERSION = "dari-v26";
+const CACHE_VERSION = "dari-v27";
 
 const APP_SHELL = [
   "./",

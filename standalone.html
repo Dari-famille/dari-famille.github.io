@@ -2820,12 +2820,26 @@ const state = {
 };
 
 const scoreKey = "darija-app-score";
-const score = JSON.parse(
-  localStorage.getItem(scoreKey) || '{"correct":0,"total":0}'
-);
+
+// Partout ailleurs le stockage est protégé, sauf ici — or l'accès à
+// localStorage ne se contente pas de renvoyer null quand il est refusé
+// (blocage total des cookies, navigation privée sur certains Safari, page
+// servie dans un cadre cloisonné) : il LÈVE une exception. Sans ce filet,
+// l'app entière ne démarrait pas dans ces conditions, écran blanc compris.
+const score = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(scoreKey) || '{"correct":0,"total":0}');
+  } catch (e) {
+    return { correct: 0, total: 0 };
+  }
+})();
 
 function saveScore() {
-  localStorage.setItem(scoreKey, JSON.stringify(score));
+  try {
+    localStorage.setItem(scoreKey, JSON.stringify(score));
+  } catch (e) {
+    /* sans stockage, le score ne survit pas à la session */
+  }
   document.getElementById("score").textContent = score.correct;
   document.getElementById("score-total").textContent = score.total;
 }
