@@ -691,7 +691,11 @@ function renderKidQuizBody(box) {
         speak(q);
       });
       reveal.appendChild(replay);
-      optionsDiv.insertAdjacentElement("afterend", reveal);
+      // La révélation prend la place de la consigne plutôt que de s'ajouter
+      // sous les propositions, où elle tombait hors écran sur un téléphone.
+      // Une fois la réponse donnée, « écoute et trouve l'image » n'a plus
+      // d'objet : la question laisse place à la réponse, sans rien déplacer.
+      prompt.replaceChildren(reveal);
 
       nextBtn.style.display = "inline-block";
       // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant

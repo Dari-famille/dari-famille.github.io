@@ -367,19 +367,14 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
-@media (max-width: 400px) {
-  /* Trois colonnes sur un petit écran ne laissent pas la place au mot :
-     on empile, chaque proposition occupant toute la largeur. */
-  .kid-quiz-grid { grid-template-columns: 1fr; }
-  .kid-quiz-tile {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 14px;
-    padding: 12px 16px;
-  }
-  .kid-quiz-emoji { font-size: 2.6rem; }
-  .kid-quiz-mot { text-align: start; }
+@media (max-width: 420px) {
+  /* Sur un petit écran, l'espace manque pour le mot : on réduit la marge et
+     la taille du texte plutôt que d'empiler les propositions, ce qui
+     coûterait deux cents pixels et rejetterait la troisième hors écran. */
+  .kid-quiz-grid { gap: 7px; }
+  .kid-quiz-tile { padding: 12px 5px; }
+  .kid-quiz-emoji { font-size: 2.5rem; }
+  .kid-quiz-mot { font-size: 0.78rem; hyphens: auto; }
 }
 
 .kid-quiz-tile {
@@ -916,6 +911,36 @@ body {
 /* Révélation du mot après la réponse, en mode Enfant.
    Elle s'adresse à l'adulte qui accompagne : lui seul peut répéter le mot,
    corriger la prononciation et faire le lien avec la vraie vie. */
+/* La révélation occupe la place de la consigne : elle doit tenir dans la même
+   hauteur, sinon les propositions descendent au moment de la réponse — et un
+   écran qui bouge sous le doigt désoriente un enfant de quatre ans. */
+.quiz-prompt .quiz-reveal {
+  font-size: 1rem;
+  margin-top: 0;
+  padding: 6px 10px;
+  gap: 8px;
+  row-gap: 2px;
+}
+.quiz-prompt .reveal-emoji { font-size: 1.5rem; }
+.quiz-prompt .reveal-latin { font-size: 1.15rem; }
+.quiz-prompt .reveal-fr { font-size: 0.85rem; order: 3; }
+.quiz-prompt .reveal-replay {
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 1rem;
+}
+/* La consigne et la révélation occupent la même place : sans hauteur
+   réservée, les propositions remontaient de 72 px au moment de la réponse. */
+.quiz-prompt {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-height: 850px) {
+  .quiz-prompt { min-height: 88px; }
+}
 .quiz-reveal {
   display: flex;
   align-items: center;
@@ -1142,6 +1167,38 @@ body {
   background: var(--saffron);
   color: #2a2013;
   font-weight: 700;
+}
+
+/* Le quiz est l'écran de l'enfant : tout ce qui le précède est fait pour
+   l'adulte, et le repoussait sous la ligne de flottaison. Sur un téléphone,
+   la troisième proposition tombait à 1012 px pour 812 px d'écran — l'enfant
+   ne voyait que deux choix sur trois, et la révélation du mot jamais. */
+@media (max-height: 850px) {
+  .app-header { padding: 14px 16px 6px; gap: 10px; }
+  .app-header h1 { font-size: clamp(1.4rem, 4vw, 1.9rem); }
+  .app-header .tagline { display: none; }
+  .category-nav { padding-block: 8px; }
+  .quiz-box { padding: 16px; }
+  .quiz-prompt { font-size: 1.15rem; margin-bottom: 12px; }
+  .quiz-prompt .quiz-emoji { font-size: 2.2rem; margin-bottom: 4px; }
+  .kid-streak { margin: -2px 0 8px; padding: 5px 12px; font-size: 0.95rem; }
+  .progress-box { margin-bottom: 12px; }
+  .section-toggle { margin-bottom: 12px; }
+}
+
+/* La signature disparaît de l'en-tête sur écran court : on la remet dans le
+   pied de page, où elle garde son rôle de désambiguïsation sans coûter de
+   hauteur utile. */
+@media (max-height: 850px) {
+  .app-footer::before {
+    content: "Dari — le darija en famille";
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }
 </style>
 </head>
@@ -3457,7 +3514,11 @@ function renderKidQuizBody(box) {
         speak(q);
       });
       reveal.appendChild(replay);
-      optionsDiv.insertAdjacentElement("afterend", reveal);
+      // La révélation prend la place de la consigne plutôt que de s'ajouter
+      // sous les propositions, où elle tombait hors écran sur un téléphone.
+      // Une fois la réponse donnée, « écoute et trouve l'image » n'a plus
+      // d'objet : la question laisse place à la réponse, sans rien déplacer.
+      prompt.replaceChildren(reveal);
 
       nextBtn.style.display = "inline-block";
       // Le bouton « Suivant » tombait sous la ligne de flottaison : un enfant
