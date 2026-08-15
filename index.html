@@ -61,10 +61,17 @@
     // version périmée sans le savoir. On l'en avertit dès que la nouvelle
     // version est prête, plutôt que de recharger dans son dos — un
     // rechargement surprise interromprait un enfant en plein quiz.
+    // Chemin figé au chargement : app.js modifie brièvement l'adresse pour
+    // marquer les étapes franchies, et un chemin relatif résolu à ce
+    // moment-là irait chercher sw.js un cran trop bas — 404, donc plus de
+    // hors-ligne ni d'installation.
+    const CHEMIN_SW = new URL("sw.js", location.href).href;
+    const RACINE_APP = new URL("./", location.href).href;
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
-          .register("sw.js")
+          .register(CHEMIN_SW, { scope: RACINE_APP })
           .then((reg) => {
             reg.addEventListener("updatefound", () => {
               const nouveau = reg.installing;

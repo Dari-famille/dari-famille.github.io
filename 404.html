@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dari — le darija en famille</title>
+  <meta name="robots" content="noindex" />
+  <!--
+    GitHub Pages sert ce fichier pour toute adresse inconnue.
+
+    L'app marque les étapes franchies par le visiteur en changeant brièvement
+    d'adresse (voir jalon() dans app.js) : c'est le seul moyen d'obtenir autre
+    chose qu'un compteur d'arrivées, la mesure d'audience n'offrant aucun
+    événement personnalisé. Ces adresses n'existent pas sur le serveur. Si
+    quelqu'un recharge pendant ce court instant, ou reçoit un lien copié à ce
+    moment-là, il doit atterrir sur l'app et non sur une erreur.
+
+    Le renvoi remplace l'entrée d'historique au lieu d'en ajouter une, sans
+    quoi le bouton Retour ramènerait ici en boucle.
+  -->
+  <script>
+    location.replace("./");
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-content: center;
+      gap: 12px;
+      text-align: center;
+      font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+      background: #f8f0dd;
+      color: #2a2013;
+    }
+    a { color: #33509e; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #161c27; color: #eee2c8; }
+      a { color: #8fa8ec; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Visible uniquement si le JavaScript est désactivé. -->
+  <p>🌙 Dari</p>
+  <p><a href="./">Revenir à l'app</a></p>
+</body>
+</html>

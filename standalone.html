@@ -2976,6 +2976,90 @@ function saveScore() {
   document.getElementById("score-total").textContent = score.total;
 }
 
+// ---- Mesure de l'usage ----
+// La mesure d'audience ne compte que des pages vues et n'offre aucun événement
+// personnalisé. Or l'app tient en une seule page : quelqu'un qui joue dix
+// minutes et quelqu'un qui repart aussitôt y laissent exactement la même
+// trace. On savait donc qui arrivait, jamais si l'app servait à quelque chose.
+//
+// Le mouchard suit en revanche les changements de route d'une application
+// monopage, et il envoie la route PRÉCÉDENTE à chaque changement. On marque
+// donc une étape en changeant l'adresse puis en la remettant aussitôt : le
+// premier changement transmet « / », le second transmet l'étape.
+//
+// replaceState et non pushState : aucune entrée n'est ajoutée à l'historique,
+// le bouton Retour reste donc intact — sur un téléphone, six retours morts
+// pour quitter l'app seraient un prix bien trop élevé pour une statistique.
+// La page 404.html couvre le cas où quelqu'un rechargerait pendant les
+// quelques centaines de millisecondes où l'adresse porte le nom de l'étape.
+//
+// Aucune donnée personnelle n'est transmise : ce sont des adresses, comptées
+// comme n'importe quelle page vue, sans identifiant ni cookie.
+const URL_APP = location.pathname + location.search + location.hash;
+const BASE_APP = location.pathname.replace(/[^/]*$/, "");
+const jalonsVus = new Set();
+const jalonsEnAttente = [];
+let jalonEnCours = false;
+
+function jalon(nom) {
+  // Une étape ne vaut qu'une fois par session : ce qu'on veut compter, c'est
+  // le nombre de visiteurs arrivés jusque-là, pas leur nombre de clics.
+  if (jalonsVus.has(nom)) return;
+  jalonsVus.add(nom);
+  if (!window.history || !history.replaceState) return;
+  jalonsEnAttente.push(nom);
+  viderJalons();
+}
+
+function viderJalons() {
+  // Rien ne doit bouger avant la fin du chargement. Le service worker et le
+  // manifeste sont référencés par des chemins relatifs : les enregistrer alors
+  // que l'adresse porte « etape/… » les ferait chercher un cran trop bas, en
+  // 404. L'app perdrait le hors-ligne et l'installation — et d'abord chez ceux
+  // qui la lancent depuis leur écran d'accueil, puisque ce jalon-là partirait
+  // avant même l'événement load.
+  if (document.readyState !== "complete") {
+    window.addEventListener("load", viderJalons, { once: true });
+    return;
+  }
+  // Deux étapes franchies coup sur coup se marcheraient dessus : on les passe
+  // l'une après l'autre.
+  if (jalonEnCours) return;
+  const nom = jalonsEnAttente.shift();
+  if (!nom) return;
+  jalonEnCours = true;
+  try {
+    history.replaceState(null, "", BASE_APP + "etape/" + nom);
+  } catch (e) {
+    // L'API History est refusée dans certains cadres cloisonnés. La mesure
+    // est optionnelle : on abandonne sans bruit.
+    jalonEnCours = false;
+    return;
+  }
+  setTimeout(() => {
+    try {
+      history.replaceState(null, "", URL_APP);
+    } catch (e) {
+      /* l'adresse reste sur l'étape : 404.html couvre le rechargement */
+    }
+    jalonEnCours = false;
+    viderJalons();
+  }, 400);
+}
+
+// Une app lancée depuis l'écran d'accueil a été installée : c'est le signal
+// d'usage le plus fort qu'on puisse recevoir sans compte utilisateur.
+if (isInstalled()) jalon("app-installee");
+
+let reponsesSession = 0;
+
+function compterReponse() {
+  reponsesSession++;
+  if (reponsesSession === 1) jalon("1-reponse");
+  if (reponsesSession === 5) jalon("5-reponses");
+  if (reponsesSession === 20) jalon("20-reponses");
+}
+
 // ---- Prononciation ----
 // La synthèse du navigateur ne parle que l'arabe standard : aucune voix
 // marocaine n'existe, et une locutrice native confirme que le rendu n'est pas
@@ -3010,6 +3094,8 @@ function speak(cible) {
   // phrases composées à la volée par le générateur.
   const item = typeof cible === "string" ? null : cible;
   const arabe = item ? item.arabic : cible;
+
+  jalon("ecoute");
 
   // On coupe systématiquement ce qui est en cours, dans les deux canaux : un
   // enregistrement et une synthèse pouvaient se chevaucher, chacun n'annulant
@@ -3170,6 +3256,7 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     state.mode = btn.dataset.mode;
     saveMode(state.mode);
+    jalon("mode-" + state.mode);
     document
       .querySelectorAll(".mode-btn")
       .forEach((b) => b.classList.toggle("active", b === btn));
@@ -3613,6 +3700,7 @@ function renderKidQuizBody(box) {
       state.quiz.streak = isCorrect ? state.quiz.streak + 1 : 0;
       state.quiz.bestStreak = Math.max(state.quiz.bestStreak, state.quiz.streak);
       saveScore();
+      compterReponse();
       if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       document.querySelectorAll(".kid-quiz-tile").forEach((b2, i) => {
         const optData = state.quiz.options[i];
@@ -3735,6 +3823,7 @@ function renderAdultQuizBody(box) {
       const isCorrect = opt === q;
       if (isCorrect) score.correct++;
       saveScore();
+      compterReponse();
       if (typeof SRS !== "undefined") SRS.review(q, isCorrect);
       if (dir === "fr2ma") speak(q);
       document.querySelectorAll(".quiz-option").forEach((b2, i) => {
@@ -3801,6 +3890,7 @@ function renderSituations(content) {
       `;
       card.addEventListener("click", () => {
         state.situationId = sit.id;
+        jalon("situation-ouverte");
         naviguerVers(renderContent);
       });
       grid.appendChild(card);
@@ -4101,6 +4191,7 @@ function renderWelcome() {
     if (!mode) return;
     state.mode = mode;
     saveMode(mode);
+    jalon("accueil-" + mode);
     document.querySelectorAll(".mode-btn").forEach((b) => {
       b.classList.toggle("active", b.dataset.mode === mode);
     });
