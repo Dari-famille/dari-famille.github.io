@@ -156,6 +156,7 @@ function viderJalons() {
 if (isInstalled()) jalon("app-installee");
 
 let reponsesSession = 0;
+let ecoutesSession = 0;
 
 function compterReponse() {
   reponsesSession++;
@@ -200,6 +201,8 @@ function speak(cible) {
   const arabe = item ? item.arabic : cible;
 
   jalon("ecoute");
+  ecoutesSession++;
+  verifierDemandeApresEcoute();
 
   // On coupe systématiquement ce qui est en cours, dans les deux canaux : un
   // enregistrement et une synthèse pouvaient se chevaucher, chacun n'annulant
@@ -1321,7 +1324,30 @@ function renderWelcome() {
 // sur ce qui manque — pas sur « aimez-vous l'app ? », à quoi tout le monde
 // répond oui sans rien apprendre à personne.
 const FEEDBACK_KEY = "dari-feedback-v1";
-const FEEDBACK_SEUIL = 12; // réponses de quiz avant de se manifester
+
+// Le seuil était de 12 réponses de quiz. La mesure d'usage a montré que
+// personne ne répond à une seule question : la demande de retour n'a donc
+// jamais été affichée à qui que ce soit. Elle est désormais branchée sur le
+// seul geste que les visiteurs font réellement, l'écoute.
+const FEEDBACK_SEUIL = 3; // écoutes avant de se manifester
+
+// Deux canaux, et pas un seul. Le courriel demande d'ouvrir une application
+// de mail et de livrer son adresse — la plupart des gens abandonnent là. Or
+// ces visiteurs arrivent d'Instagram, où ils sont déjà connectés : un message
+// privé leur coûte un geste au lieu de six. Instagram est donc proposé en
+// premier, le mail reste pour ceux qui préfèrent.
+const INSTAGRAM_DM = "https://ig.me/m/darifamille";
+
+function lienMail(sujet, corps) {
+  // Sujet pré-rempli pour retrouver ces messages d'un coup d'œil, corps amorcé
+  // parce qu'une page blanche fait renoncer.
+  return (
+    "mailto:dari.famille@proton.me?subject=" +
+    encodeURIComponent(sujet) +
+    "&body=" +
+    encodeURIComponent(corps)
+  );
+}
 
 function feedbackDejaVu() {
   try {
@@ -1340,51 +1366,83 @@ function classerFeedback() {
 }
 
 function peutDemanderFeedback() {
-  return !feedbackDejaVu() && score.total >= FEEDBACK_SEUIL;
+  return !feedbackDejaVu() && ecoutesSession >= FEEDBACK_SEUIL;
 }
 
-function renderFeedbackPrompt(content) {
-  if (!peutDemanderFeedback()) return;
-
+// Fabrique le bloc de demande. `mot` est renseigné quand on sait déjà ce que
+// la personne cherchait : la question devient alors précise, et une question
+// précise obtient une réponse là où « des retours ? » n'en obtient aucune.
+function construireDemande(mot) {
   const box = document.createElement("div");
   box.className = "feedback-box";
-  box.innerHTML = `
-    <p class="feedback-q">Un mot vous manque&nbsp;?</p>
-    <p class="feedback-sub">Dites-nous lequel — on l'ajoute. C'est comme ça que
-    Dari s'est construite jusqu'ici.</p>
-  `;
+
+  const q = document.createElement("p");
+  q.className = "feedback-q";
+  const sub = document.createElement("p");
+  sub.className = "feedback-sub";
+
+  if (mot) {
+    q.textContent = "« " + mot + " » n'y est pas encore.";
+    sub.textContent =
+      "Dites-le-nous et on l'ajoute. C'est exactement comme ça que Dari s'est " +
+      "construite jusqu'ici — mot par mot, sur demande.";
+  } else {
+    q.textContent = "Un mot vous manque ?";
+    sub.textContent =
+      "On est deux à faire cette app, et on lit tout. Dites-nous ce qui " +
+      "manque, on l'ajoute.";
+  }
+  box.append(q, sub);
+
+  const sujet = mot ? "Dari — il manque « " + mot + " »" : "Dari — il me manque un mot";
+  const corps = mot
+    ? "Le mot que je cherchais : " + mot + "\n\nLa situation où j'en aurais besoin :\n\n"
+    : "Le mot ou la phrase qui me manque :\n\n\nLa situation où j'en aurais besoin :\n\n";
 
   const actions = document.createElement("div");
   actions.className = "feedback-actions";
 
-  const write = document.createElement("a");
-  write.className = "feedback-write";
-  // Le sujet pré-rempli permet de retrouver ces messages d'un coup d'œil, et
-  // le corps amorce la réponse : une page blanche fait abandonner.
-  write.href =
-    "mailto:dari.famille@proton.me" +
-    "?subject=" + encodeURIComponent("Dari — il me manque un mot") +
-    "&body=" + encodeURIComponent(
-      "Le mot ou la phrase qui me manque :\n\n\n" +
-      "La situation où j'en aurais besoin :\n\n"
-    );
-  write.textContent = "✉️ Dire ce qui manque";
-  write.addEventListener("click", () => {
-    classerFeedback();
-    box.remove();
-  });
+  const insta = document.createElement("a");
+  insta.className = "feedback-write";
+  insta.href = INSTAGRAM_DM;
+  insta.target = "_blank";
+  insta.rel = "noopener";
+  insta.textContent = "💬 Nous écrire sur Instagram";
+
+  const mail = document.createElement("a");
+  mail.className = "feedback-later";
+  mail.href = lienMail(sujet, corps);
+  mail.textContent = "✉️ Par mail";
 
   const later = document.createElement("button");
   later.className = "feedback-later";
   later.textContent = "Plus tard";
-  later.addEventListener("click", () => {
-    classerFeedback();
-    box.remove();
-  });
 
-  actions.append(write, later);
+  [insta, mail, later].forEach((el) =>
+    el.addEventListener("click", () => {
+      classerFeedback();
+      box.remove();
+    })
+  );
+
+  actions.append(insta, mail, later);
   box.appendChild(actions);
-  content.appendChild(box);
+  return box;
+}
+
+function renderFeedbackPrompt(content) {
+  if (!peutDemanderFeedback()) return;
+  content.appendChild(construireDemande(null));
+}
+
+// L'écoute ne redessine rien : sans ce déclenchement direct, la demande
+// n'apparaîtrait qu'au prochain changement d'écran, c'est-à-dire souvent
+// jamais.
+function verifierDemandeApresEcoute() {
+  if (!peutDemanderFeedback()) return;
+  const zone = document.getElementById("content");
+  if (!zone || zone.querySelector(".feedback-box")) return;
+  zone.appendChild(construireDemande(null));
 }
 
 // ---- Rendu de la recherche et des favoris ----
@@ -1458,8 +1516,12 @@ function renderResults(content, seulementResultats) {
   titre.style.marginTop = "0";
   titre.textContent = res.length
     ? `${res.length} résultat${res.length > 1 ? "s" : ""} pour « ${state.query.trim()} »`
-    : `Aucun résultat pour « ${state.query.trim()} ». Dites-nous ce qui manque !`;
+    : `Aucun résultat pour « ${state.query.trim()} ».`;
   zone.appendChild(titre);
+
+  if (!res.length && !feedbackDejaVu()) {
+    zone.appendChild(construireDemande(state.query.trim()));
+  }
 
   const grid = document.createElement("div");
   grid.className = "card-grid";

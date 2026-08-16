@@ -1254,3 +1254,30 @@ body {
     gap: 10px;
   }
 }
+
+/* Le bloc de retour propose maintenant deux canaux plutôt qu'un : Instagram
+   en action principale, le mail en second. Sur un téléphone étroit, trois
+   boutons côte à côte deviennent illisibles — ils passent en colonne. */
+.feedback-actions {
+  flex-wrap: wrap;
+}
+
+.feedback-write {
+  text-decoration: none;
+  text-align: center;
+}
+
+.feedback-later {
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 420px) {
+  .feedback-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
