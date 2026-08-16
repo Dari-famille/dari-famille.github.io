@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Dari — le darija en famille</title>
   <meta name="description" content="Dari : apprendre le darija (arabe marocain) en famille. Conçu par un couple franco-marocain pour les familles mixtes, avec un mode enfant et un mode adulte. Fonctionne hors-ligne." />
+
+  <!-- Vignette de partage. Sans ces balises, un lien collé dans WhatsApp ou
+       dans un message s'affiche en texte gris, sans image — et se fait
+       nettement moins ouvrir. Or les statistiques montrent un flux régulier
+       de visites sans référent depuis des ordinateurs, la signature d'un lien
+       transmis en conversation privée : c'est le chemin le plus emprunté vers
+       l'app, et c'était le seul sans soin.
+       L'adresse de l'image doit être absolue : les aperçus sont fabriqués par
+       les serveurs de WhatsApp et de Facebook, qui n'ont aucun contexte. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dari-famille.github.io/" />
+  <meta property="og:title" content="Dari — le darija en famille" />
+  <meta property="og:description" content="Pour que vos enfants parlent avec leurs grands-parents. Gratuit, sans compte, fonctionne hors-ligne." />
+  <meta property="og:image" content="https://dari-famille.github.io/icons/partage.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:site_name" content="Dari" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#33509e" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#161c27" media="(prefers-color-scheme: dark)" />
   <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,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" />
