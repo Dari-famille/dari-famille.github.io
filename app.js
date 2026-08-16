@@ -1368,6 +1368,7 @@ function classerFeedback() {
 let feedbackReporte = false;
 
 function peutDemanderFeedback() {
+  if (state.mode === "kid") return false;
   return !feedbackDejaVu() && !feedbackReporte && ecoutesSession >= FEEDBACK_SEUIL;
 }
 
@@ -1788,6 +1789,9 @@ function renderInstallBanner() {
 
   const bar = document.createElement("div");
   bar.className = "install-bar";
+  // Même emplacement à l'écran : on retire la note plutôt que de la recouvrir.
+  const note = document.querySelector(".voice-note");
+  if (note) note.remove();
   bar.innerHTML = `
     <span class="install-text">
       <strong>Gardez Dari sous la main</strong>
