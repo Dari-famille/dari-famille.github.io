@@ -1338,7 +1338,7 @@ body {
     et pour toutes les familles qui vivent la même chose.</p>
     <p class="wip">Dari est en construction, et se corrige avec ceux qui s'en servent.
     Un mot qui sonne faux, une phrase qui manque, une situation qu'on a oubliée&nbsp;?
-    <a href="mailto:dari.famille@proton.me?subject=Dari">Écrivez-nous</a> — on lit tout.</p>
+    <a href="https://ig.me/m/darifamille" target="_blank" rel="noopener">Écrivez-nous sur Instagram</a> ou <a href="mailto:dari.famille@proton.me?subject=Dari">par mail</a> — on lit tout.</p>
     <p class="mesure">Une mesure d'audience anonyme compte les visites, sans cookie ni donnée personnelle.</p>
     <p class="audio-disclaimer">🎙️ <strong>La prononciation, on y travaille en ce moment.</strong>
     Tant qu'un mot n'a pas été enregistré, « Écouter » utilise la voix du téléphone,
@@ -4307,8 +4307,10 @@ function classerFeedback() {
   }
 }
 
+let feedbackReporte = false;
+
 function peutDemanderFeedback() {
-  return !feedbackDejaVu() && ecoutesSession >= FEEDBACK_SEUIL;
+  return !feedbackDejaVu() && !feedbackReporte && ecoutesSession >= FEEDBACK_SEUIL;
 }
 
 // Fabrique le bloc de demande. `mot` est renseigné quand on sait déjà ce que
@@ -4360,12 +4362,20 @@ function construireDemande(mot) {
   later.className = "feedback-later";
   later.textContent = "Plus tard";
 
-  [insta, mail, later].forEach((el) =>
+  [insta, mail].forEach((el) =>
     el.addEventListener("click", () => {
       classerFeedback();
       box.remove();
     })
   );
+
+  later.addEventListener("click", () => {
+    // Reporté, pas classé : on ne retient rien sur l'appareil, la demande
+    // reviendra à la prochaine ouverture. Trois écoutes plus tard, et une
+    // seule fois par session — ce n'est pas du harcèlement.
+    feedbackReporte = true;
+    box.remove();
+  });
 
   actions.append(insta, mail, later);
   box.appendChild(actions);

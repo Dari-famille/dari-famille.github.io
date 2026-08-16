@@ -1365,8 +1365,10 @@ function classerFeedback() {
   }
 }
 
+let feedbackReporte = false;
+
 function peutDemanderFeedback() {
-  return !feedbackDejaVu() && ecoutesSession >= FEEDBACK_SEUIL;
+  return !feedbackDejaVu() && !feedbackReporte && ecoutesSession >= FEEDBACK_SEUIL;
 }
 
 // Fabrique le bloc de demande. `mot` est renseigné quand on sait déjà ce que
@@ -1418,12 +1420,20 @@ function construireDemande(mot) {
   later.className = "feedback-later";
   later.textContent = "Plus tard";
 
-  [insta, mail, later].forEach((el) =>
+  [insta, mail].forEach((el) =>
     el.addEventListener("click", () => {
       classerFeedback();
       box.remove();
     })
   );
+
+  later.addEventListener("click", () => {
+    // Reporté, pas classé : on ne retient rien sur l'appareil, la demande
+    // reviendra à la prochaine ouverture. Trois écoutes plus tard, et une
+    // seule fois par session — ce n'est pas du harcèlement.
+    feedbackReporte = true;
+    box.remove();
+  });
 
   actions.append(insta, mail, later);
   box.appendChild(actions);
