@@ -3,5 +3,6 @@ User-agent: *
 Disallow: /relecture.html
 Disallow: /enregistrement.html
 Disallow: /standalone.html
+Disallow: /feminin.html
 
 Sitemap: https://dari-famille.github.io/sitemap.xml

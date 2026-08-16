@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dari — le féminin à valider</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <!--
+    Page de travail, transmise par lien direct à la relectrice native.
+
+    Une utilisatrice a signalé en commentaire le 16 août que l'app ne connaît
+    que le masculin : une grand-mère qui parle à sa petite-fille ne dit pas
+    « kul » mais « kuli ». Ça concerne la moitié des enfants.
+
+    Les formes proposées ici viennent de Claude, pas d'une locutrice : ce sont
+    des hypothèses fondées sur la règle générale (ajout d'un -i), et la règle
+    ne s'applique pas partout. D'où cette page : rien n'entre dans l'app sans
+    validation. Le ton du texte le dit explicitement, pour qu'elle sache
+    qu'elle corrige une machine et non son mari.
+  -->
+  <style>
+    :root {
+      --bg: #f8f0dd;
+      --surface: #ffffff;
+      --surface-2: #fbf5e6;
+      --ink: #2a2013;
+      --muted: #7a6d55;
+      --majorelle: #33509e;
+      --emerald: #1f7a5c;
+      --terracotta: #b6502e;
+      --saffron: #d99a2b;
+      --hair: #e6dcc4;
+      --shadow: 0 2px 10px rgba(42, 32, 19, 0.1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #161c27;
+        --surface: #202838;
+        --surface-2: #1b2230;
+        --ink: #eee2c8;
+        --muted: #9aa1b5;
+        --majorelle: #8fa8ec;
+        --emerald: #57c99b;
+        --terracotta: #e88c62;
+        --saffron: #f0c369;
+        --hair: #333b49;
+        --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px 16px 120px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 620px;
+      margin-inline: auto;
+    }
+    h1 {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      color: var(--majorelle);
+      font-size: 1.6rem;
+      margin: 0 0 6px;
+    }
+    .intro { color: var(--muted); font-size: 0.94rem; }
+    .intro strong { color: var(--ink); }
+    .compte {
+      margin: 18px 0 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .mot {
+      background: var(--surface);
+      border: 1px solid var(--hair);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 14px 15px;
+      margin-bottom: 12px;
+    }
+    .mot.repondu { border-color: var(--emerald); }
+    .fr { color: var(--muted); font-size: 0.88rem; }
+    .masc { font-size: 1.15rem; font-weight: 700; margin: 2px 0 10px; }
+    .masc small { font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+    .question { font-size: 0.95rem; margin-bottom: 10px; }
+    .propose { color: var(--terracotta); font-weight: 700; }
+    .choix { display: flex; flex-wrap: wrap; gap: 8px; }
+    button {
+      font: inherit;
+      border-radius: 999px;
+      border: 2px solid var(--majorelle);
+      background: var(--surface-2);
+      color: var(--majorelle);
+      padding: 9px 15px;
+      min-height: 44px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    button.actif { background: var(--majorelle); color: var(--surface); }
+    button.invar.actif { background: var(--muted); border-color: var(--muted); }
+    button.autre.actif { background: var(--terracotta); border-color: var(--terracotta); }
+    button:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+    input[type="text"] {
+      margin-top: 10px;
+      width: 100%;
+      font: inherit;
+      padding: 11px 12px;
+      min-height: 44px;
+      border-radius: 10px;
+      border: 2px solid var(--terracotta);
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+    .barre {
+      position: fixed;
+      inset-inline: 0;
+      bottom: 0;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--hair);
+      box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.12);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    .barre span { font-size: 0.88rem; color: var(--muted); }
+    #copier:disabled { opacity: 0.45; cursor: default; }
+  </style>
+</head>
+<body>
+
+  <h1>Le féminin</h1>
+  <p class="intro">
+    Une maman nous a écrit hier : l'app ne connaît que le masculin. Une mamie
+    qui parle à sa <strong>petite-fille</strong> ne dit pas « kul » mais « kuli ».
+    Ça concerne la moitié des enfants, et on ne l'avait pas vu.
+  </p>
+  <p class="intro">
+    <strong>Les formes proposées ci-dessous viennent de l'ordinateur, pas d'une
+    Marocaine.</strong> Elles suivent la règle du « -i », et cette règle ne
+    marche pas partout — certains mots ne changent pas du tout. C'est
+    exactement ce qu'on te demande de trancher. Réponds au feeling, comme tu
+    parles à ton neveu et à ta nièce.
+  </p>
+  <p class="intro">
+    À la fin, le bouton en bas copie tout : il n'y a plus qu'à coller dans un
+    message.
+  </p>
+
+  <p class="compte" id="compte"></p>
+  <div id="liste"></div>
+
+  <div class="barre">
+    <span id="etat"></span>
+    <button id="copier" disabled>Copier</button>
+  </div>
+
+<script>
+  // fr    : le sens, pour qu'elle sache de quoi on parle
+  // masc  : la forme déjà validée par elle, telle qu'elle est dans l'app
+  // hypo  : la forme féminine proposée par l'ordinateur, à confirmer ou non
+  // note  : ce qui fait douter, quand il y a une raison de douter
+  const MOTS = [
+    { fr: "Viens !", masc: "Aji", hypo: "Aji",
+      note: "La maman qui nous a écrit l'a laissé inchangé. Ça se confirme ?" },
+    { fr: "Mange !", masc: "Kul", hypo: "Kuli",
+      note: "Elle a écrit « kouli ». On garde quelle orthographe ?" },
+    { fr: "Bois !", masc: "Chreb", hypo: "Chrebi" },
+    { fr: "Assieds-toi", masc: "Gles", hypo: "Glesi",
+      note: "Elle a écrit « go3di », qui semble être un autre verbe. Lequel dit-on à un enfant ?" },
+    { fr: "Lève-toi", masc: "Noud", hypo: "Noudi" },
+    { fr: "Regarde !", masc: "Chouf", hypo: "Choufi" },
+    { fr: "Écoute !", masc: "Sme3", hypo: "Sme3i" },
+    { fr: "Encore / continue", masc: "Zid", hypo: "Zidi" },
+    { fr: "Ça suffit / arrête", masc: "Baraka", hypo: "Baraka",
+      note: "Invariable ?" },
+    { fr: "Donne-moi", masc: "3tini", hypo: "3tini",
+      note: "Est-ce que ça change selon qu'on parle à un garçon ou à une fille ?" },
+    { fr: "Tu veux… ?", masc: "Bghiti", hypo: "Bghiti",
+      note: "Invariable ?" },
+    { fr: "Tu as assez mangé ?", masc: "Chba3ti", hypo: "Chba3ti",
+      note: "Invariable ?" },
+    { fr: "Comment tu t'appelles ?", masc: "Chnou smitek", hypo: "Chnou smitek",
+      note: "Le « -ek » change-t-il pour une fille ?" },
+    { fr: "D'accord ?", masc: "Wakha", hypo: "Wakha",
+      note: "Invariable ?" },
+  ];
+
+  // Les réponses sont conservées sur le téléphone : la séance peut être
+  // interrompue par un enfant et reprise plus tard sans tout recommencer.
+  const CLE = "dari-feminin-v1";
+
+  function lire() {
+    try { return JSON.parse(localStorage.getItem(CLE) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function ecrire(etat) {
+    try { localStorage.setItem(CLE, JSON.stringify(etat)); }
+    catch (e) { /* navigation privée : les réponses ne survivront pas */ }
+  }
+
+  const etat = lire();
+  const liste = document.getElementById("liste");
+  const compteEl = document.getElementById("compte");
+  const etatEl = document.getElementById("etat");
+  const copierBtn = document.getElementById("copier");
+
+  MOTS.forEach((mot, i) => {
+    const carte = document.createElement("div");
+    carte.className = "mot";
+
+    const fr = document.createElement("div");
+    fr.className = "fr";
+    fr.textContent = mot.fr;
+
+    const masc = document.createElement("div");
+    masc.className = "masc";
+    masc.innerHTML = mot.masc + " <small>— à un garçon</small>";
+
+    // Quand la forme proposée est identique au masculin, « Oui c'est ça » et
+    // « = pareil » disent la même chose : deux boutons pour une seule réponse,
+    // et la relectrice hésite pour rien. On pose alors la question autrement.
+    const identique = mot.hypo === mot.masc;
+
+    const q = document.createElement("div");
+    q.className = "question";
+    q.innerHTML = (identique
+      ? "Est-ce que ça change, pour une fille ?"
+      : "À une fille, on dit <span class=\"propose\">" + mot.hypo + "</span> ?")
+      + (mot.note ? "<br><small>" + mot.note + "</small>" : "");
+
+    const choix = document.createElement("div");
+    choix.className = "choix";
+
+    const champ = document.createElement("input");
+    champ.type = "text";
+    champ.placeholder = "La bonne forme…";
+    champ.hidden = true;
+
+    const boutons = identique
+      ? [
+          { cle: "invariable", texte: "Non, c'est pareil", classe: "invar" },
+          { cle: "autre", texte: "✏️ Oui, c'est…", classe: "autre" },
+        ]
+      : [
+          { cle: "oui", texte: "✅ Oui, c'est ça", classe: "" },
+          { cle: "invariable", texte: "= pareil", classe: "invar" },
+          { cle: "autre", texte: "✏️ Non, c'est…", classe: "autre" },
+        ];
+
+    boutons.forEach((b) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = b.classe;
+      btn.textContent = b.texte;
+      btn.addEventListener("click", () => {
+        etat[i] = { choix: b.cle, texte: b.cle === "autre" ? (etat[i] || {}).texte || "" : "" };
+        ecrire(etat);
+        peindre();
+        if (b.cle === "autre") champ.focus();
+      });
+      choix.appendChild(btn);
+      b.el = btn;
+    });
+
+    champ.addEventListener("input", () => {
+      etat[i] = { choix: "autre", texte: champ.value };
+      ecrire(etat);
+      rafraichir();
+    });
+
+    function peindre() {
+      const r = etat[i] || {};
+      boutons.forEach((b) => b.el.classList.toggle("actif", r.choix === b.cle));
+      champ.hidden = r.choix !== "autre";
+      if (r.choix === "autre") champ.value = r.texte || "";
+      carte.classList.toggle("repondu", !!r.choix);
+      rafraichir();
+    }
+
+    carte.append(fr, masc, q, choix, champ);
+    liste.appendChild(carte);
+    peindre();
+  });
+
+  function rafraichir() {
+    const faits = MOTS.filter((_, i) => (etat[i] || {}).choix).length;
+    compteEl.textContent = faits + " sur " + MOTS.length + " — il n'y a pas d'ordre, saute ce qui bloque.";
+    etatEl.textContent = faits === MOTS.length ? "Tout est répondu 🎉" : faits + " / " + MOTS.length;
+    copierBtn.disabled = faits === 0;
+  }
+
+  copierBtn.addEventListener("click", () => {
+    let out = "FÉMININ — " + new Date().toLocaleDateString("fr-FR") + "\n\n";
+    MOTS.forEach((mot, i) => {
+      const r = etat[i];
+      if (!r || !r.choix) return;
+      let reponse;
+      if (r.choix === "oui") reponse = mot.hypo;
+      else if (r.choix === "invariable") reponse = mot.masc + " (pareil qu'au masculin)";
+      else reponse = (r.texte || "").trim() || "??? (à repréciser)";
+      out += mot.fr + "\n  garçon : " + mot.masc + "\n  fille  : " + reponse + "\n\n";
+    });
+    const manquants = MOTS.filter((_, i) => !(etat[i] || {}).choix).length;
+    if (manquants) out += "(" + manquants + " mot(s) non répondu(s))\n";
+
+    navigator.clipboard.writeText(out).then(
+      () => {
+        copierBtn.textContent = "✅ Copié";
+        setTimeout(() => (copierBtn.textContent = "Copier"), 1800);
+      },
+      () => {
+        // Presse-papiers refusé : on affiche le texte pour une copie manuelle
+        // plutôt que de laisser le travail se perdre.
+        const zone = document.createElement("textarea");
+        zone.value = out;
+        zone.style.cssText = "width:100%;height:40vh;margin-top:12px";
+        document.body.appendChild(zone);
+        zone.select();
+        copierBtn.textContent = "Copie manuelle ↓";
+      }
+    );
+  });
+
+  rafraichir();
+</script>
+</body>
+</html>
