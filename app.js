@@ -619,6 +619,7 @@ function renderKidCards(content) {
     card.innerHTML = `
       <div class="kid-emoji">${item.emoji}</div>
       <div class="kid-latin">${item.latin}</div>
+      ${item.fem ? `<div class="kid-fem">fille : ${item.fem}</div>` : ""}
       <div class="kid-fr">${item.fr}</div>
     `;
     card.addEventListener("click", () => speak(item));
@@ -1027,6 +1028,12 @@ function renderSituations(content) {
   list.className = "situation-lines";
   current.lines.forEach((line) => {
     // En mode enfant on ne montre que les phrases qu'un enfant peut dire.
+    // Une locutrice native a déclaré cette formulation incorrecte sans encore
+    // donner la bonne. Ne rien afficher vaut mieux que d'afficher faux : c'est
+    // précisément pour ne pas se tromper devant sa belle-famille qu'on ouvre
+    // cette app. La ligne reste dans le fichier et revient dans l'outil de
+    // relecture jusqu'à ce qu'elle soit corrigée.
+    if (line.faux) return;
     if (state.mode === "kid" && !line.kid) return;
 
     const card = document.createElement("div");
@@ -1034,6 +1041,7 @@ function renderSituations(content) {
     card.innerHTML = `
       <div class="line-fr">${line.fr}</div>
       <div class="line-latin">${line.latin}</div>
+      ${line.fem ? `<div class="line-fem">à une fille : <b>${line.fem}</b></div>` : ""}
       <div class="line-arabic arabic">${line.arabic}</div>
       ${line.from ? `<div class="line-from">↪ ${line.from}</div>` : ""}
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
@@ -1644,9 +1652,10 @@ function toutesLesEntrees() {
   if (typeof SITUATIONS !== "undefined") {
     SITUATIONS.forEach((sit) => {
       if (sit.refs) return; // le kit ne fait que pointer ailleurs
-      sit.lines.forEach((l) =>
-        out.push({ item: l, source: sit.emoji + " " + situationLabel(sit) })
-      );
+      sit.lines.forEach((l) => {
+        if (l.faux) return; // déclarée fausse : ni recherche, ni quiz, ni mémoire
+        out.push({ item: l, source: sit.emoji + " " + situationLabel(sit) });
+      });
     });
   }
   return out;

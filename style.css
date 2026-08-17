@@ -1281,3 +1281,20 @@ body {
     align-items: stretch;
   }
 }
+
+/* Forme féminine. Une mamie ne dit pas « kul » à sa petite-fille mais
+   « kuli » — signalé par une utilisatrice en commentaire, validé le 17 août.
+   Présentée sous la forme masculine plutôt qu'à côté : la lecture reste
+   simple pour qui n'a qu'un garçon, et l'information est là pour les autres. */
+.line-fem {
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.line-fem b { color: var(--terracotta); font-weight: 700; }
+
+.kid-fem {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: -2px;
+}

@@ -47,6 +47,7 @@ const SITUATIONS = [
       {
         fr: "Je suis heureux d'être ici",
         latin: "Ana ferhan bach ana hna",
+        faux: true,
         arabic: "أنا فرحان باش أنا هنا",
         check: true,
         note:
@@ -240,7 +241,6 @@ const SITUATIONS = [
         latin: "Ymken nel3ab m3akoum ?",
         arabic: "يمكن نلعب معاكم؟",
         kid: true,
-        check: true,
       },
       {
         fr: "À toi !",
@@ -304,42 +304,49 @@ const SITUATIONS = [
       {
         fr: "Mange !",
         latin: "Kul !",
+        fem: "Kuli",
         arabic: "كول",
         kid: true,
       },
       {
         fr: "Bois !",
         latin: "Chreb !",
+        fem: "Chrebi",
         arabic: "شرب",
         kid: true,
       },
       {
         fr: "Assieds-toi",
         latin: "Gles !",
+        fem: "Glesi",
         arabic: "كلس",
         kid: true,
       },
       {
         fr: "Lève-toi",
         latin: "Noud !",
+        fem: "Noudi",
         arabic: "نوض",
         kid: true,
       },
       {
         fr: "Regarde !",
         latin: "Chouf !",
+        fem: "Choufi",
         arabic: "شوف",
         kid: true,
       },
       {
         fr: "Écoute !",
         latin: "Sme3 !",
+        fem: "Sme3i",
         arabic: "سمع",
         kid: true,
       },
       {
         fr: "Encore / continue",
         latin: "Zid !",
+        fem: "Zidi",
         arabic: "زيد",
         kid: true,
         note: "S'entend surtout à table, quand on veut vous resservir.",
@@ -502,7 +509,6 @@ const SITUATIONS = [
         latin: "Ma kanhdarch mzyan darija",
         arabic: "ما كنهضرش مزيان دارجة",
         kid: true,
-        check: true,
         note:
           "À dire d'entrée. Elle désamorce tout : les gens ralentissent " +
           "d'eux-mêmes et apprécient l'effort au lieu de juger le niveau.",
@@ -545,7 +551,6 @@ const SITUATIONS = [
         fr: "Qu'est-ce que ça veut dire ?",
         latin: "Achno kat3ni ?",
         arabic: "أشنو كتعني؟",
-        check: true,
       },
     ],
   },
@@ -597,7 +602,6 @@ const SITUATIONS = [
         latin: "Bslama",
         arabic: "بسلامة",
         kid: true,
-        check: true,
         note:
           "« Je t'embrasse » ne se traduit pas : la formule n'existe pas pour " +
           "clore un appel. On dit simplement « bslama ». Traduire mot à mot " +
@@ -607,12 +611,14 @@ const SITUATIONS = [
       {
         fr: "On vient bientôt",
         latin: "Ghadi njiw qriban, inchallah",
+        faux: true,
         arabic: "غادي نجيو قريبا، إن شاء الله",
         check: true,
       },
       {
         fr: "Passe-moi mamie",
         latin: "3tini jeddati, 3afak",
+        faux: true,
         arabic: "عطيني جدتي، عافاك",
         kid: true,
         check: true,
@@ -711,7 +717,6 @@ const SITUATIONS = [
         fr: "Il est allergique",
         latin: "3endo hasasiya",
         arabic: "عندو حساسية",
-        check: true,
       },
       {
         fr: "Où est la pharmacie ?",
@@ -749,14 +754,12 @@ const SITUATIONS = [
         fr: "Tu viens d'où ?",
         latin: "Mnin nta ? (homme) / Mnin nti ? (femme)",
         arabic: "منين نتا؟ / منين نتي؟",
-        check: true,
         note: "Réponse : « ana men Fransa » — je viens de France.",
       },
       {
         fr: "Tu as des enfants ?",
         latin: "3endek drari ?",
         arabic: "عندك دراري؟",
-        check: true,
         note:
           "Question posée très tôt et sans détour — elle n'a rien d'indiscret " +
           "ici. « Iyeh, 3endi weld » : oui, j'ai un fils.",
@@ -764,6 +767,7 @@ const SITUATIONS = [
       {
         fr: "Tu restes combien de temps ?",
         latin: "Ghadi tbqa chhal ?",
+        faux: true,
         arabic: "غادي تبقى شحال؟",
         check: true,
       },
@@ -771,7 +775,6 @@ const SITUATIONS = [
         fr: "Tu aimes le Maroc ?",
         latin: "3ejbek lmghrib ?",
         arabic: "عجبك المغرب؟",
-        check: true,
         note:
           "La réponse attendue est enthousiaste. « 3ejbni bezzaf » suffit — " +
           "une réponse tiède serait entendue comme un reproche.",
@@ -780,7 +783,6 @@ const SITUATIONS = [
         fr: "Tu as mangé ?",
         latin: "Klti ?",
         arabic: "كليتي؟",
-        check: true,
         note:
           "Ce n'est pas une question, c'est une invitation. Répondre « oui » " +
           "ne vous dispensera pas d'être servi.",
@@ -789,14 +791,12 @@ const SITUATIONS = [
         fr: "Tu parles darija ?",
         latin: "Katehder darija ?",
         arabic: "كتهضر دارجة؟",
-        check: true,
         note: "Le moment d'utiliser « chwiya » — un peu. Toujours bien reçu.",
       },
       {
         fr: "Tu reviens quand ?",
         latin: "Imta ghadi terje3 ?",
         arabic: "امتى غادي ترجع؟",
-        check: true,
         note:
           "Posée au moment du départ, souvent avec émotion. « Qriban, " +
           "inchallah » est la seule réponse à donner.",
@@ -818,7 +818,6 @@ const SITUATIONS = [
         fr: "Il faut qu'on y aille",
         latin: "Khassna nemchiw",
         arabic: "خاصنا نمشيو",
-        check: true,
       },
       {
         fr: "Merci pour tout",
@@ -828,6 +827,7 @@ const SITUATIONS = [
       {
         fr: "On s'est régalés",
         latin: "Frahna bezzaf",
+        faux: true,
         arabic: "فرحنا بزاف",
         check: true,
         note: "Littéralement « nous nous sommes réjouis ». À faire valider.",
