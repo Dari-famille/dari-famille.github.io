@@ -1298,3 +1298,77 @@ body {
   color: var(--muted);
   margin-top: -2px;
 }
+
+/* Bande « Vu dans nos vidéos ».
+   Tout le trafic arrive d'un Reel consacré à un mot précis. Cette bande le
+   met à portée immédiate au lieu de le laisser chercher : c'est le seul
+   endroit où l'app tient la promesse de la vidéo.
+   Défilement horizontal — dix mots en colonne repousseraient le reste de
+   l'app hors de l'écran. */
+.videos-bande {
+  margin: 0 0 18px;
+}
+
+.videos-titre {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.videos-piste {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.videos-piste::-webkit-scrollbar { display: none; }
+
+.videos-puce {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 152px;
+  max-width: 230px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--hair, #e6dcc4);
+  border-left: 4px solid var(--terracotta);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+
+.videos-puce:hover { transform: translateY(-1px); }
+.videos-puce:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+
+.videos-mot {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--terracotta);
+  white-space: nowrap;
+}
+
+.videos-fr {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.videos-son {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--majorelle);
+}

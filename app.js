@@ -2,12 +2,18 @@ const MODE_KEY = "dari-mode-v1";
 
 // Le mode choisi est un réglage durable, pas une préférence de session : un
 // adulte qui revient le lendemain ne doit pas retomber sur l'interface enfant.
+//
+// Par défaut : Adulte. Ce sont des adultes qui arrivent — la totalité du
+// trafic vient de vidéos sur les belles-mères et les repas de famille, et un
+// enfant de quatre ans ne parcourt pas Instagram. Faire atterrir ces gens sur
+// un quiz pour enfants leur montrait exactement l'inverse de ce qu'on leur
+// avait promis. Le mode Enfant reste à un geste, dans l'en-tête.
 function savedMode() {
   try {
     const m = localStorage.getItem(MODE_KEY);
-    return m === "adult" || m === "kid" ? m : "kid";
+    return m === "adult" || m === "kid" ? m : "adult";
   } catch (e) {
-    return "kid";
+    return "adult";
   }
 }
 
@@ -529,6 +535,10 @@ function renderContent() {
   // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
   // décourage plus qu'il n'apprend.
   if (state.mode !== "kid") toggle.appendChild(builderBtn);
+  // Les mots des vidéos passent AVANT les onglets : ce sont eux la raison de
+  // la visite, les onglets ne sont que de la navigation. Quatre rangées de
+  // chrome avant le contenu promis, c'était trois de trop.
+  renderMotsDesVideos(body);
   body.appendChild(toggle);
 
   renderProgress(body);
@@ -1253,6 +1263,25 @@ function renderBuilder(content) {
 // pose la seule question qui change l'affichage — pour qui ? — puis on le
 // dépose directement sur le contenu le plus utile.
 const ONBOARD_KEY = "dari-onboard-v1";
+const VISITE_KEY = "dari-visite-v1";
+
+function dejaVenu() {
+  try {
+    return localStorage.getItem(VISITE_KEY) === "1";
+  } catch (e) {
+    // Sans stockage on ne saura jamais que la personne revient : on ne montre
+    // donc jamais l'écran, ce qui vaut mieux que de le montrer à chaque fois.
+    return false;
+  }
+}
+
+function marquerVenu() {
+  try {
+    localStorage.setItem(VISITE_KEY, "1");
+  } catch (e) {
+    /* sans stockage, l'écran de bienvenue ne se montrera pas : sans gravité */
+  }
+}
 
 function alreadyWelcomed() {
   try {
@@ -1447,6 +1476,68 @@ function construireDemande(mot) {
   actions.append(insta, mail, later);
   box.appendChild(actions);
   return box;
+}
+
+// Les mots des Reels, en tête de l'écran d'accueil.
+//
+// La totalité du trafic arrive d'une vidéo consacrée à UN mot précis, et
+// tombait jusqu'ici sur un écran qui n'en parlait pas : il fallait le chercher
+// soi-même dans vingt-six catégories. La mesure le disait sans détour — on
+// appuie sur Écouter, puis on repart. C'était le bon geste au mauvais endroit.
+//
+// L'ordre suit celui des publications, la plus récente en premier : c'est
+// celle qui amène du monde à l'instant où quelqu'un arrive.
+const MOTS_DES_VIDEOS = [
+  "Allah y3tik saha",         // « choukran après le repas, c'est tiède »
+  "Katehder darija ?",        // « on va te demander si tu parles darija »
+  "Mabrouk",                  // « on te dit mabrouk »
+  "Aji !",                    // « le seul mot que ton enfant doit comprendre »
+  "Lhamdulillah",             // « répondre ça va, c'est mal répondre »
+  "Inchallah",                // « inchallah veut parfois dire non »
+  "Chba3t, Allah y3tik saha", // « dire non à une belle-mère »
+  "Bsaha",                    // « on te félicite en sortant de la douche »
+  "Twahachtek",               // « on traduit par tu me manques, c'est faux »
+  "Tbarkallah 3lih !",        // « ne complimente jamais un enfant sans ça »
+];
+
+function renderMotsDesVideos(content) {
+  // Écran d'un enfant de quatre ans : ni la mention des vidéos ni ce format
+  // dense n'y ont leur place.
+  if (state.mode === "kid") return;
+  // Une recherche ou une situation ouverte sont des intentions précises : on
+  // ne s'intercale pas devant.
+  if (state.situationId || state.query.trim().length >= 2) return;
+
+  const parLatin = new Map();
+  toutesLesEntrees().forEach(({ item }) => {
+    if (!parLatin.has(item.latin)) parLatin.set(item.latin, item);
+  });
+  const mots = MOTS_DES_VIDEOS.map((m) => parLatin.get(m)).filter(Boolean);
+  if (!mots.length) return;
+
+  const bloc = document.createElement("section");
+  bloc.className = "videos-bande";
+
+  const titre = document.createElement("p");
+  titre.className = "videos-titre";
+  titre.textContent = "🎬 Vu dans nos vidéos";
+  bloc.appendChild(titre);
+
+  const piste = document.createElement("div");
+  piste.className = "videos-piste";
+  mots.forEach((item) => {
+    const puce = document.createElement("button");
+    puce.type = "button";
+    puce.className = "videos-puce";
+    puce.innerHTML =
+      `<span class="videos-mot">${item.latin}</span>` +
+      `<span class="videos-fr">${item.fr}</span>` +
+      `<span class="videos-son">🔊 Écouter</span>`;
+    puce.addEventListener("click", () => speak(item));
+    piste.appendChild(puce);
+  });
+  bloc.appendChild(piste);
+  content.appendChild(bloc);
 }
 
 function renderFeedbackPrompt(content) {
@@ -1748,7 +1839,16 @@ renderCategoryNav();
 renderContent();
 renderShareButton();
 saveScore();
-if (!cible && !alreadyWelcomed()) renderWelcome();
+// L'écran de bienvenue attend la deuxième visite. Il posait une question
+// — « vous l'utilisez pour qui ? » — avant d'avoir rien donné, à des gens qui
+// arrivent d'un Reel avec trois secondes d'attention. Or l'en-tête propose ce
+// même choix en permanence : l'écran ne servait qu'à retarder le contenu.
+// Quelqu'un qui revient a montré son intérêt ; c'est là que la question vaut
+// la peine d'être posée.
+if (!cible && !alreadyWelcomed()) {
+  if (dejaVenu()) renderWelcome();
+  else marquerVenu();
+}
 
 // ---- Invitation à installer ----
 // Sans collecte d'e-mail — impossible tant que le responsable de traitement
