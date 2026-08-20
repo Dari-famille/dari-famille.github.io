@@ -76,7 +76,7 @@
 <div class="howto">
   <p><strong>Comment faire :</strong> choisis un thème, puis pour chaque phrase appuie sur <strong>Enregistrer</strong>, dis-la normalement, et appuie sur <strong>Stop</strong>.</p>
   <p>Tu peux réécouter et refaire autant de fois que tu veux. Parle à ton rythme habituel, comme tu le dirais à quelqu'un — pas besoin d'articuler exagérément.</p>
-  <p>Tout est gardé sur ce téléphone : tu peux t'arrêter et reprendre. À la fin, le bouton vert prépare un fichier à renvoyer.</p>
+  <p>Tout est gardé sur cet appareil : tu peux t'arrêter et reprendre. À la fin, le bouton vert prépare un fichier à renvoyer.</p>
 </div>
 
 <select id="batch"></select>
@@ -1501,6 +1501,44 @@ function keyOf(item) {
 // On découpe par thème : personne n'enregistre 338 phrases d'affilée, et un
 // lot qui se termine donne envie d'en faire un autre.
 const BATCHES = [];
+
+// Les mots des vidéos publiées, rassemblés en tête de liste.
+// Ils existent déjà ailleurs, éparpillés dans une douzaine de thèmes : chercher
+// « bsaha » parmi trente-sept lots est le premier endroit où l'on renonce.
+// Ce lot ne duplique rien, il pointe vers les mêmes entrées — la clé d'un
+// enregistrement dérive du couple fr|latin, donc un mot enregistré ici l'est
+// aussi pour l'app.
+const MOTS_DES_VIDEOS = [
+  "Bsaha",                    // « on te félicite quand tu sors de la douche »
+  "Tbarkallah 3lih !",        // « ne complimente jamais un enfant sans ça »
+  "Chba3t, Allah y3tik saha", // « dire non à une belle-mère »
+  "Lhamdulillah",             // « répondre ça va, c'est mal répondre »
+  "Mabrouk",                  // « on te dit mabrouk »
+  "Allah ybarek fik",         // la réponse attendue à mabrouk
+  "Allah y3tik saha",         // « choukran après le repas, c'est tiède »
+  "Inchallah",                // « inchallah veut parfois dire non »
+  "Twahachtek",               // « on traduit par tu me manques, c'est faux »
+  "Aji !",                    // « le seul mot que ton enfant doit comprendre »
+  "Katehder darija ?",        // « on va te demander si tu parles darija »
+  "Chwiya",                   // la réponse à cette question
+  "Chwiya b chwiya",          // « ce qu'on te répond quand tu massacres »
+  "Wakha",                    // le mot le plus utile du darija
+];
+
+(function lotDesVideos() {
+  const parLatin = new Map();
+  SITUATIONS.forEach((s) => {
+    if (s.refs) return;
+    s.lines.forEach((l) => {
+      if (!l.faux && !parLatin.has(l.latin)) parLatin.set(l.latin, l);
+    });
+  });
+  const items = MOTS_DES_VIDEOS.map((m) => parLatin.get(m)).filter(Boolean);
+  if (items.length) {
+    BATCHES.push({ id: "videos", label: "🎬 Les mots des vidéos", items: items });
+  }
+})();
+
 SITUATIONS.forEach((s) => {
   if (s.refs) return; // le kit de survie ne fait que pointer ailleurs
   BATCHES.push({ id: "sit-" + s.id, label: s.emoji + " " + s.label, items: s.lines });
