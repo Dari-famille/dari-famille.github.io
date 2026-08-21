@@ -46,13 +46,12 @@ const SITUATIONS = [
       },
       {
         fr: "Je suis heureux d'être ici",
-        latin: "Ana ferhan bach ana hna",
-        faux: true,
-        arabic: "أنا فرحان باش أنا هنا",
-        check: true,
+        latin: "Ana ferhan hit ana hna",
+        fem: "Ana ferhana hit ana hna",
+        arabic: "أنا فرحان حيت أنا هنا",
         note:
-          "Femme : « ferhana ». Correction native reçue mais tronquée " +
-          "(« Ana fer… ») — à redemander avant publication.",
+          "« bach » (pour que) était fautif : c'est « hit », parce que. "
+          + "Corrigé le 21 août.",
       },
       {
         fr: "Votre maison est très belle",
@@ -610,18 +609,21 @@ const SITUATIONS = [
       },
       {
         fr: "On vient bientôt",
-        latin: "Ghadi njiw qriban, inchallah",
-        faux: true,
-        arabic: "غادي نجيو قريبا، إن شاء الله",
-        check: true,
+        latin: "Qerebna njiw, inchallah",
+        arabic: "قربنا نجيو، إن شاء الله",
+        note:
+          "Littéralement « on s'est rapprochés de venir ». Le futur « ghadi "
+          + "njiw qriban » était du mot à mot. Corrigé le 21 août.",
       },
       {
-        fr: "Passe-moi mamie",
-        latin: "3tini jeddati, 3afak",
-        faux: true,
-        arabic: "عطيني جدتي، عافاك",
+        fr: "Passe-moi maman",
+        latin: "Dewwez liya mmi, 3afak",
+        arabic: "دوز ليا مي، عافاك",
         kid: true,
-        check: true,
+        note:
+          "« 3tini » (donne-moi) ne se dit pas d'une personne : c'est "
+          + "« dewwez », fais passer. La correction native dit « mmi », "
+          + "qui est la mère — la version pour la grand-mère reste à demander.",
       },
     ],
   },
@@ -766,10 +768,11 @@ const SITUATIONS = [
       },
       {
         fr: "Tu restes combien de temps ?",
-        latin: "Ghadi tbqa chhal ?",
-        faux: true,
-        arabic: "غادي تبقى شحال؟",
-        check: true,
+        latin: "Chhal ghadi tbqa ?",
+        arabic: "شحال غادي تبقى؟",
+        note:
+          "Même mots, autre ordre : l'interrogatif passe devant. "
+          + "Corrigé le 21 août.",
       },
       {
         fr: "Tu aimes le Maroc ?",
@@ -830,7 +833,11 @@ const SITUATIONS = [
         faux: true,
         arabic: "فرحنا بزاف",
         check: true,
-        note: "Littéralement « nous nous sommes réjouis ». À faire valider.",
+        note:
+          "Confirmé faux le 21 août : « frahna bezzaf » veut dire « nous "
+          + "étions très heureux », pas « on s'est régalés ». La formule qui "
+          + "parle du repas reste à obtenir — seule des cinq à rester en "
+          + "attente.",
       },
       {
         fr: "À bientôt, si Dieu le veut",

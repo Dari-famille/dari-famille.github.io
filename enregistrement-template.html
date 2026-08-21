@@ -348,8 +348,33 @@ async function renderBatch() {
       recorder.ondataavailable = (e) => e.data.size && parts.push(e.data);
       recorder.onstop = async () => {
         const blob = new Blob(parts, { type: recorder.mimeType || "audio/mp4" });
-        await put(key, blob);
         rec.classList.remove("on");
+        // Le libellé de repli : « Refaire » si un clip existait déjà, sinon on
+        // remet la carte dans son état de départ.
+        const etatPrecedent = card.classList.contains("done")
+          ? "🎙️ Refaire" : "🎙️ Enregistrer";
+
+        // Un appui sur Stop trop rapide, un micro coupé par un appel entrant,
+        // et le clip est vide. Sans ce contrôle il compterait comme fait : le
+        // compteur avancerait sur du silence, et on ne s'en apercevrait qu'au
+        // moment de découper les fichiers, des semaines plus tard.
+        if (blob.size < 1200) {
+          err.textContent = "Trop court — rien n'a été gardé. Recommence.";
+          rec.textContent = etatPrecedent;
+          return;
+        }
+
+        try {
+          await put(key, blob);
+        } catch (e) {
+          // Mémoire pleine, navigation privée : ne jamais afficher « fait »
+          // pour un enregistrement que l'appareil n'a pas gardé.
+          err.textContent = "L'appareil n'a pas pu le garder. Réessaie.";
+          rec.textContent = etatPrecedent;
+          return;
+        }
+
+        err.textContent = "";
         rec.textContent = "🎙️ Refaire";
         play.style.display = "";
         card.classList.add("done");
