@@ -1340,7 +1340,24 @@ body {
   text-transform: uppercase;
   font-weight: 700;
   color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
+
+/* Le lien Suivre vit dans la ligne de titre de la bande : discret mais
+   toujours à l'écran d'arrivée. La zone tactile est élargie au-delà du
+   texte — c'est un lien qu'on touche au pouce, pas à la souris. */
+.videos-suivre {
+  color: var(--majorelle);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 8px 2px;
+  margin: -8px -2px;
+  white-space: nowrap;
+}
+.videos-suivre:hover { text-decoration: underline; }
 
 .videos-piste {
   display: flex;

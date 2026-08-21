@@ -221,6 +221,13 @@ function speak(cible) {
 
   jalon("ecoute");
   ecoutesSession++;
+  // Deux écoutes valent mieux que 45 secondes : la minuterie sonnait après
+  // la mort de la session type (2 installations pour ~50 visites d'inconnus),
+  // tandis qu'une deuxième écoute est un signe d'intérêt réel, au moment où
+  // il se manifeste. La minuterie reste en filet pour ceux qui lisent sans
+  // écouter. La demande de retour, elle, attend la troisième écoute — et
+  // cède la place tant que l'invitation est à l'écran.
+  if (ecoutesSession === 2) renderInstallBanner();
   verifierDemandeApresEcoute();
 
   // On coupe systématiquement ce qui est en cours, dans les deux canaux : un
@@ -1406,6 +1413,11 @@ const FEEDBACK_SEUIL = 3; // écoutes avant de se manifester
 // privé leur coûte un geste au lieu de six. Instagram est donc proposé en
 // premier, le mail reste pour ceux qui préfèrent.
 const INSTAGRAM_DM = "https://ig.me/m/darifamille";
+// Le profil public, distinct du lien de message privé : suivre et écrire
+// sont deux gestes différents, et c'est le premier qui manquait. L'app ne
+// proposait nulle part de suivre le compte — le pont de retour le moins
+// cher qui existe, pour un produit dont personne ne revisite la page.
+const INSTAGRAM_PROFIL = "https://www.instagram.com/darifamille/";
 
 function lienMail(sujet, corps) {
   // Sujet pré-rempli pour retrouver ces messages d'un coup d'œil, corps amorcé
@@ -1552,7 +1564,19 @@ function renderMotsDesVideos(content) {
 
   const titre = document.createElement("p");
   titre.className = "videos-titre";
-  titre.textContent = "🎬 Vu dans nos vidéos";
+  const libelle = document.createElement("span");
+  libelle.textContent = "🎬 Vu dans nos vidéos";
+  // Suivre se propose ici et pas ailleurs : celui qui lit cette bande vient
+  // d'une vidéo, c'est le seul moment où « suivre » est la suite logique.
+  const suivre = document.createElement("a");
+  suivre.className = "videos-suivre";
+  suivre.href = INSTAGRAM_PROFIL;
+  suivre.target = "_blank";
+  suivre.rel = "noopener";
+  suivre.textContent = "Suivre →";
+  suivre.setAttribute("aria-label", "Suivre darifamille sur Instagram");
+  suivre.addEventListener("click", () => jalon("suivre-insta"));
+  titre.append(libelle, suivre);
   bloc.appendChild(titre);
 
   const piste = document.createElement("div");
