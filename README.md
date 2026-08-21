@@ -70,9 +70,11 @@ garderont l'ancienne version en cache.
 
 ## Points d'attention
 
-- **La transcription latine n'est pas normalisée.** Le darija n'a pas
-  d'orthographe latine officielle ; on suit l'usage courant du web marocain
-  (`3` = ع, `7` = ح, `9`/`q` = ق).
+- **Transcription latine : `3` pour ع, mais `h` et `q`.** Le darija n'a pas
+  d'orthographe latine officielle. L'usage du web marocain écrit ح par `7` et
+  ق par `9` ; on ne le suit pas, parce que le public visé est francophone
+  débutant et ne connaît pas ce code — `7jezt` ne se prononce pas tout seul.
+  On garde `3` pour ع, qui n'a pas d'équivalent lisible.
 - **La prononciation vocale est approximative.** La synthèse vocale du
   navigateur utilise une voix arabe standard, pas un accent marocain. C'est
   indiqué dans l'interface pour ne pas induire en erreur.

@@ -180,16 +180,22 @@ def build_relecture():
         return
 
     html = RELECTURE_SRC.read_text(encoding="utf-8")
-    js = read("situations.js")
-    remplacement = "\n<script>\n" + js + "</script>"
-    html, n = re.subn(
-        r'\s*<script src="situations\.js"></script>',
-        lambda _m: remplacement,
-        html,
-        count=1,
-    )
-    if n != 1:
-        sys.exit("La balise script de situations.js est introuvable dans le modèle de relecture")
+    # data.js avant situations.js : la page réunit les deux listes, et
+    # `motsARelire()` est défini dans data.js. Ce fichier manquait — la
+    # relecture ne portait que sur les phrases, jamais sur le vocabulaire.
+    sources = []
+    for nom in ("data.js", "situations.js"):
+        js = read(nom)
+        sources.append(js)
+        remplacement = "\n<script>\n" + js + "</script>"
+        html, n = re.subn(
+            r'\s*<script src="%s"></script>' % re.escape(nom),
+            lambda _m: remplacement,
+            html,
+            count=1,
+        )
+        if n != 1:
+            sys.exit(f"La balise script de {nom} est introuvable dans le modèle de relecture")
 
     RELECTURE_OUT.write_text(html, encoding="utf-8")
 
@@ -198,6 +204,7 @@ def build_relecture():
     # `check: true` et serait comptée comme une entrée.
     pending = sum(
         1
+        for js in sources
         for line in js.splitlines()
         if not line.lstrip().startswith("//") and re.search(r"check:\s*true", line)
     )

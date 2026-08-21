@@ -1174,7 +1174,7 @@ const CATEGORIES = [
     emoji: "🏡",
     kidFriendly: true,
     items: [
-      { fr: "Je peux jouer dehors ?", latin: "Wach ne9der nl3ab bra?", arabic: "واش نقدر نلعب برا؟", emoji: "🤸" },
+      { fr: "Je peux jouer dehors ?", latin: "Wach ne9der nl3ab bra?", arabic: "واش نقدر نلعب برا؟", emoji: "🤸", check: true, note: "Écrit en chiffres (7, 9) alors que tout le reste de l'app utilise h et q. Seule question : comment l'écrire en lettres ?", },
       { fr: "Aide-moi s'il te plaît", latin: "3awenni 3afak", arabic: "عاونني عافاك", emoji: "🙋" },
       { fr: "Un bisou", latin: "Bosa", arabic: "بوسة", emoji: "😘" },
       { fr: "Un câlin", latin: "Hidn", arabic: "حضن", emoji: "🤗" },
@@ -1195,7 +1195,7 @@ const CATEGORIES = [
       { fr: "Je ne comprends pas", latin: "Ma fhemtch", arabic: "ما فهمتش", emoji: "🤷" },
       { fr: "Je ne parle pas bien Darija", latin: "Ma ne3reftch nhder Darija mzyan", arabic: "ما نعرفتش نهضر الدارجة مزيان", emoji: "🗣️" },
       { fr: "Où sont les toilettes ?", latin: "Fin kayn lbit lma?", arabic: "فين كاين البيت الما؟", emoji: "🚻" },
-      { fr: "C'est combien ?", latin: "Bcha7al?", arabic: "بشحال؟", emoji: "💰" },
+      { fr: "C'est combien ?", latin: "Bcha7al?", arabic: "بشحال؟", emoji: "💰", check: true, note: "Écrit en chiffres (7, 9) alors que tout le reste de l'app utilise h et q. Seule question : comment l'écrire en lettres ?", },
       { fr: "J'ai faim", latin: "Fiya jou3", arabic: "فيا جوع", emoji: "🍽️" },
       { fr: "J'ai soif", latin: "Fiya 3tech", arabic: "فيا عطش", emoji: "🥤" },
       { fr: "Je suis fatigué(e)", latin: "Ana 3eyan", arabic: "انا عيان", emoji: "😴" },
@@ -1275,7 +1275,7 @@ const CATEGORIES = [
       { fr: "Jeudi", latin: "Lkhmis", arabic: "لخميس", emoji: "🗓️" },
       { fr: "Vendredi", latin: "Jjm3a", arabic: "جمعة", emoji: "🗓️" },
       { fr: "Samedi", latin: "Sebt", arabic: "سبت", emoji: "🗓️" },
-      { fr: "Dimanche", latin: "7ed", arabic: "حد", emoji: "🗓️" },
+      { fr: "Dimanche", latin: "7ed", arabic: "حد", emoji: "🗓️", check: true, note: "Écrit en chiffres (7, 9) alors que tout le reste de l'app utilise h et q. Seule question : comment l'écrire en lettres ?", },
       { fr: "Mois", latin: "Chher", arabic: "شهر", emoji: "🌙" },
       { fr: "Année", latin: "3am", arabic: "عام", emoji: "🎊" },
       { fr: "Avant-hier", latin: "Wellbareh", arabic: "ولبارح", emoji: "⏪" },
@@ -1358,7 +1358,7 @@ const CATEGORIES = [
       { fr: "Il pleut", latin: "Katchti", arabic: "كتشتي", emoji: "🌧️" },
       { fr: "Soleil", latin: "Chms", arabic: "شمس", emoji: "☀️" },
       { fr: "Pluie", latin: "Chta", arabic: "شتا", emoji: "🌧️" },
-      { fr: "Nuage", latin: "S7ab", arabic: "سحاب", emoji: "☁️" },
+      { fr: "Nuage", latin: "S7ab", arabic: "سحاب", emoji: "☁️", check: true, note: "Écrit en chiffres (7, 9) alors que tout le reste de l'app utilise h et q. Seule question : comment l'écrire en lettres ?", },
       { fr: "Été", latin: "Sif", arabic: "صيف", emoji: "🏖️" },
       { fr: "Hiver", latin: "Chtwa", arabic: "شتوة", emoji: "❄️" },
       { fr: "Printemps", latin: "Rbi3", arabic: "ربيع", emoji: "🌸" },
@@ -1435,7 +1435,7 @@ const CATEGORIES = [
       { fr: "Valise", latin: "Balisa", arabic: "باليزة", emoji: "🧳" },
       { fr: "Passeport", latin: "Jawaz safar", arabic: "جواز سفر", emoji: "📔" },
       { fr: "Clé", latin: "Saroute", arabic: "سروت", emoji: "🔑" },
-      { fr: "J'ai réservé", latin: "7jezt", arabic: "حجزت", emoji: "📅" },
+      { fr: "J'ai réservé", latin: "7jezt", arabic: "حجزت", emoji: "📅", check: true, note: "Écrit en chiffres (7, 9) alors que tout le reste de l'app utilise h et q. Seule question : comment l'écrire en lettres ?", },
       { fr: "Combien de nuits ?", latin: "Chhal men lila?", arabic: "شحال من ليلة؟", emoji: "🌙" },
     ],
   },
@@ -1474,6 +1474,21 @@ const CATEGORIES = [
 // Générateur de phrases simples : Sujet (Je) + Verbe + Complément
 // Les compléments possibles sont piochés parmi les noms tagués ci-dessus
 // (famille, animaux, nourriture) selon ce que le verbe permet ("tags").
+// Pendant de `linesToCheck()` pour le vocabulaire. Il manquait : la page de
+// relecture n'inlinait que situations.js, si bien qu'aucun des mots de ce
+// fichier n'a jamais pu être soumis à la relectrice — les entrées marquées
+// `check` y restaient invisibles. Même forme de sortie que pour les
+// situations, pour que la page traite les deux sans le savoir.
+function motsARelire() {
+  const out = [];
+  CATEGORIES.forEach((cat) => {
+    cat.items.forEach((item) => {
+      if (item.check) out.push({ situation: cat.emoji + " " + cat.label, ...item });
+    });
+  });
+  return out;
+}
+
 const SENTENCE_BUILDER = {
   subject: { fr: "Je", latin: "Ana", arabic: "أنا" },
   verbs: [

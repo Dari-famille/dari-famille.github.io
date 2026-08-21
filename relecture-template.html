@@ -118,6 +118,7 @@
   <button id="copy" disabled>Copier</button>
 </div>
 
+<script src="data.js"></script>
 <script src="situations.js"></script>
 <script>
   const STORE = "dari-relecture-v1";
@@ -128,7 +129,12 @@
     try { localStorage.setItem(STORE, JSON.stringify(answers)); } catch (e) {}
   }
 
-  const items = linesToCheck();
+  // Les phrases d'abord, les mots de vocabulaire ensuite : les phrases sont
+  // ce qui se dit devant la belle-famille, donc ce qui coûte le plus cher si
+  // c'est faux.
+  const items = linesToCheck().concat(
+    typeof motsARelire === "function" ? motsARelire() : []
+  );
   const list = document.getElementById("list");
   let lastSituation = null;
 
