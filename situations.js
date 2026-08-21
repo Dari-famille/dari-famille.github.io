@@ -829,13 +829,13 @@ const SITUATIONS = [
       },
       {
         fr: "On s'est régalés",
-        latin: "Tbere3na meziane",
+        latin: "Tbere3na Meziane",
         arabic: "تبرعنا مزيان",
-        check: true,
         note:
           "Se dit quand le moment a été bon. « Frahna bezzaf », qu'on avait "
           + "écrit ici, veut dire « nous étions très heureux » — c'est "
-          + "autre chose. Reste à confirmer : l'écriture en arabe.",
+          + "autre chose. Orthographe latine et arabe confirmées par la "
+          + "relectrice le 21 août.",
       },
       {
         fr: "À bientôt, si Dieu le veut",
