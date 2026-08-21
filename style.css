@@ -1053,6 +1053,25 @@ body {
   border: 2px solid color-mix(in srgb, var(--emerald) 40%, transparent);
   text-align: center;
 }
+
+/* Variante déclenchée par la troisième écoute : posée au bord de l'écran,
+   comme la note sur la voix, parce qu'un bloc ajouté en fin de page au
+   moment où l'utilisateur est au milieu d'une liste n'est vu par personne. */
+.feedback-box.feedback-flottant {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 38;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  border-top: 3px solid var(--emerald);
+  background: var(--surface);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  animation: voice-note-in 0.25s ease-out;
+}
 .feedback-q { margin: 0 0 4px; font-weight: 700; font-size: 1.02rem; }
 .feedback-sub {
   margin: 0 0 14px;
@@ -1161,7 +1180,12 @@ body {
 @media (max-height: 850px) {
   .app-header { padding: 14px 16px 6px; gap: 10px; }
   .app-header h1 { font-size: clamp(1.4rem, 4vw, 1.9rem); }
-  .app-header .tagline { display: none; }
+  /* La tagline avait été retirée ici pour faire tenir le quiz enfant à
+     l'écran — mais mobile est la totalité du public réel, et plus rien ne
+     disait ce qu'est l'app. Elle revient, compacte, pour l'adulte ; le mode
+     Enfant la masque toujours, lui seul a besoin de ces pixels. */
+  .app-header .tagline { font-size: 0.7rem; margin-top: 0; }
+  body.mode-enfant .app-header .tagline { display: none; }
   .category-nav { padding-block: 8px; }
   .quiz-box { padding: 16px; }
   .quiz-prompt { font-size: 1.15rem; margin-bottom: 12px; }

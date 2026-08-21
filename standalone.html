@@ -1087,6 +1087,25 @@ body {
   border: 2px solid color-mix(in srgb, var(--emerald) 40%, transparent);
   text-align: center;
 }
+
+/* Variante déclenchée par la troisième écoute : posée au bord de l'écran,
+   comme la note sur la voix, parce qu'un bloc ajouté en fin de page au
+   moment où l'utilisateur est au milieu d'une liste n'est vu par personne. */
+.feedback-box.feedback-flottant {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 38;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  border-top: 3px solid var(--emerald);
+  background: var(--surface);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  animation: voice-note-in 0.25s ease-out;
+}
 .feedback-q { margin: 0 0 4px; font-weight: 700; font-size: 1.02rem; }
 .feedback-sub {
   margin: 0 0 14px;
@@ -1195,7 +1214,12 @@ body {
 @media (max-height: 850px) {
   .app-header { padding: 14px 16px 6px; gap: 10px; }
   .app-header h1 { font-size: clamp(1.4rem, 4vw, 1.9rem); }
-  .app-header .tagline { display: none; }
+  /* La tagline avait été retirée ici pour faire tenir le quiz enfant à
+     l'écran — mais mobile est la totalité du public réel, et plus rien ne
+     disait ce qu'est l'app. Elle revient, compacte, pour l'adulte ; le mode
+     Enfant la masque toujours, lui seul a besoin de ces pixels. */
+  .app-header .tagline { font-size: 0.7rem; margin-top: 0; }
+  body.mode-enfant .app-header .tagline { display: none; }
   .category-nav { padding-block: 8px; }
   .quiz-box { padding: 16px; }
   .quiz-prompt { font-size: 1.15rem; margin-bottom: 12px; }
@@ -3038,6 +3062,12 @@ const SRS = (() => {
   <script>
 const MODE_KEY = "dari-mode-v1";
 
+// Identifiants réservés de la barre de navigation. Déclarés avant l'état :
+// l'écran d'atterrissage adulte est désormais les situations, et l'état
+// initial doit pouvoir les nommer.
+const SITUATIONS_ID = "__situations__";
+const FAVORIS_ID = "__favoris__";
+
 // Le mode choisi est un réglage durable, pas une préférence de session : un
 // adulte qui revient le lendemain ne doit pas retomber sur l'interface enfant.
 //
@@ -3066,7 +3096,14 @@ function saveMode(mode) {
 // État de l'application
 const state = {
   mode: savedMode(), // "kid" | "adult"
-  categoryId: CATEGORIES.find((c) => c.kidFriendly).id,
+  // L'adulte atterrit sur les situations, pas sur une liste de vocabulaire.
+  // La totalité du trafic vient de vidéos sur des moments de famille précis,
+  // et l'écran des situations est le seul qui ressemble à cette promesse —
+  // « Salam = bonjour » en première carte disait exactement l'inverse.
+  categoryId:
+    savedMode() === "adult" && typeof SITUATIONS !== "undefined" && SITUATIONS.length
+      ? SITUATIONS_ID
+      : CATEGORIES.find((c) => c.kidFriendly).id,
   // La section par défaut suit le mode. Le quiz est ce qui retient un
   // enfant — un enfant de huit ans testé sans consigne y est resté, là où
   // les cartes le laissaient indifférent — il ouvre donc le mode Enfant.
@@ -3307,9 +3344,6 @@ function noteVoixDejaVue() {
 }
 
 function signalerVoixDeSynthese() {
-  // Sans voix arabe installée, rien n'est prononcé : annoncer un accent serait
-  // absurde, un repli lisible est déjà affiché à la place.
-  if (!voixArabeDisponible) return;
   if (noteVoixDejaVue() || document.querySelector(".voice-note")) return;
   // Deux bandeaux occupent déjà le bas de l'écran. Plutôt que de les
   // chevaucher, on attend la prochaine écoute — la note n'est pas urgente.
@@ -3326,11 +3360,20 @@ function signalerVoixDeSynthese() {
   note.setAttribute("role", "status");
 
   const texte = document.createElement("p");
-  texte.innerHTML =
-    "🎙️ Cette voix est celle de votre téléphone : elle lit en <strong>arabe " +
-    "classique</strong>, pas en darija. Nous enregistrons en ce moment les " +
-    "vraies voix marocaines, mot par mot — elles remplaceront celle-ci au fur " +
-    "et à mesure.";
+  // Deux cas très différents derrière le même bouton. Avec une voix arabe :
+  // on entend de l'arabe classique, il faut dire pourquoi. Sans voix arabe —
+  // fréquent sous Windows, parfois sur Android — « Écouter » ne produit
+  // RIEN : seize visites Windows en sept jours ont appuyé sur un bouton
+  // muet sans la moindre explication. Le silence inexpliqué, c'est « l'app
+  // est cassée », et on ne revient pas d'une app cassée.
+  texte.innerHTML = voixArabeDisponible
+    ? "🎙️ Cette voix est celle de votre téléphone : elle lit en <strong>arabe " +
+      "classique</strong>, pas en darija. Nous enregistrons en ce moment les " +
+      "vraies voix marocaines, mot par mot — elles remplaceront celle-ci au fur " +
+      "et à mesure."
+    : "🔇 Cet appareil n'a pas de voix arabe installée : « Écouter » reste " +
+      "muet pour l'instant. Nous enregistrons en ce moment les vraies voix " +
+      "marocaines, mot par mot — elles fonctionneront partout, celle-ci comprise.";
   note.appendChild(texte);
 
   const fermer = document.createElement("button");
@@ -3431,8 +3474,7 @@ document.querySelectorAll(".mode-btn").forEach((btn) => {
 // Les situations ne sont pas une catégorie de vocabulaire : elles occupent
 // un identifiant réservé dans la même barre de navigation, parce que c'est
 // bien le même choix pour l'utilisateur — « qu'est-ce que je travaille ? ».
-const SITUATIONS_ID = "__situations__";
-const FAVORIS_ID = "__favoris__";
+// (Identifiants déclarés en tête de fichier, avec l'état.)
 
 function currentSituations() {
   if (typeof SITUATIONS === "undefined") return [];
@@ -3503,6 +3545,11 @@ function renderCategoryNav() {
 function renderContent() {
   const content = document.getElementById("content");
   content.innerHTML = "";
+
+  // Le CSS doit connaître le mode : la tagline revient sur mobile pour les
+  // adultes — le seul public mesuré — mais reste masquée en mode Enfant, où
+  // chaque pixel vertical a été gagné pour faire tenir le quiz à l'écran.
+  document.body.classList.toggle("mode-enfant", state.mode === "kid");
 
   document.getElementById("category-nav").style.display =
     state.section === "builder" ? "none" : "";
@@ -3603,6 +3650,10 @@ function renderProgress(content) {
   const cat = getCategory();
   const s = SRS.stats(cat.items);
   const streak = SRS.streak();
+  // Un premier visiteur n'a rien à mesurer : « 0 / 18 acquis » n'est que du
+  // chrome entre lui et le contenu. La jauge apparaît dès qu'il existe une
+  // progression à montrer.
+  if (s.acquired === 0 && s.learning === 0 && s.due === 0 && streak === 0) return;
   const pctAcquired = s.total ? (s.acquired / s.total) * 100 : 0;
   // Les deux segments partent du bord gauche et se superposent : l'en-cours
   // est tracé jusqu'au cumul des deux, l'acquis vient le recouvrir à gauche.
@@ -4025,6 +4076,11 @@ function renderSituations(content) {
   const current = sits.find((s) => s.id === state.situationId);
 
   if (!current) {
+    // La liste des situations est désormais l'écran d'arrivée : la bande des
+    // mots des vidéos doit y être aussi, sinon déposer le visiteur ici lui
+    // retirerait précisément le mot qu'il vient chercher.
+    renderMotsDesVideos(content);
+
     const intro = document.createElement("p");
     intro.className = "note";
     intro.style.marginTop = "0";
@@ -4089,7 +4145,7 @@ function renderSituations(content) {
     card.innerHTML = `
       <div class="line-fr">${line.fr}</div>
       <div class="line-latin">${line.latin}</div>
-      ${line.fem ? `<div class="line-fem">à une fille : <b>${line.fem}</b></div>` : ""}
+      ${line.fem ? `<div class="line-fem">au féminin : <b>${line.fem}</b></div>` : ""}
       <div class="line-arabic arabic">${line.arabic}</div>
       ${line.from ? `<div class="line-from">↪ ${line.from}</div>` : ""}
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
@@ -4588,9 +4644,18 @@ function renderFeedbackPrompt(content) {
 // jamais.
 function verifierDemandeApresEcoute() {
   if (!peutDemanderFeedback()) return;
-  const zone = document.getElementById("content");
-  if (!zone || zone.querySelector(".feedback-box")) return;
-  zone.appendChild(construireDemande(null));
+  if (document.querySelector(".feedback-box")) return;
+  // La demande s'ajoutait en fin de page : à la troisième écoute,
+  // l'utilisateur est au milieu d'une liste, et un bloc apposé sous des
+  // dizaines de cartes n'existe pour personne. C'est très probablement la
+  // raison pour laquelle aucun retour n'est jamais arrivé par ce canal.
+  // Elle se présente désormais au bord de l'écran, comme la note sur la voix.
+  if (document.querySelector(".install-bar, .update-bar")) return;
+  const note = document.querySelector(".voice-note");
+  if (note) note.remove();
+  const box = construireDemande(null);
+  box.classList.add("feedback-flottant");
+  document.body.appendChild(box);
 }
 
 // ---- Rendu de la recherche et des favoris ----
@@ -4877,6 +4942,11 @@ renderCategoryNav();
 renderContent();
 renderShareButton();
 saveScore();
+// La deuxième visite est LA statistique qui manquait : on la déduisait en
+// creux (jalons d'accueil muets, catalogue immobile). On la marque désormais
+// telle quelle — c'est le chiffre qui dira si l'app retient quelqu'un.
+if (dejaVenu()) jalon("re-visite");
+
 // L'écran de bienvenue attend la deuxième visite. Il posait une question
 // — « vous l'utilisez pour qui ? » — avant d'avoir rien donné, à des gens qui
 // arrivent d'un Reel avec trois secondes d'attention. Or l'en-tête propose ce
