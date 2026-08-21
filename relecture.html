@@ -57,7 +57,10 @@
   }
   .verdict { display: flex; gap: 8px; margin-top: 12px; }
   .verdict button {
-    flex: 1; padding: 9px; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+    /* 44 px : en dessous, un pouce rate la cible une fois sur cinq — et
+       cette page ne s'utilise que sur un téléphone. */
+    flex: 1; padding: 11px 9px; min-height: 44px; border-radius: 10px;
+    font-size: 0.9rem; font-weight: 600;
     border: 2px solid color-mix(in srgb, var(--muted) 35%, transparent);
     background: transparent; color: var(--ink); cursor: pointer;
   }
@@ -82,6 +85,19 @@
     color: #fff; font-weight: 700; font-size: 0.92rem; cursor: pointer;
   }
   .bar button:disabled { opacity: 0.4; cursor: default; }
+
+    /* Une correction commencée mais vide : ni faite, ni oubliée. */
+    .card.attente { border-color: #d99a2b; }
+
+    .etat-fix {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #b6502e;
+    }
+    .etat-fix.show { display: block; }
+    .etat-fix.ok { color: #1f7a5c; }
 </style>
 </head>
 <body>
@@ -1048,12 +1064,25 @@ function linesToCheck() {
   const countEl = document.getElementById("count");
   const copyBtn = document.getElementById("copy");
 
+  // Une réponse n'est complète que si elle dit quelque chose. « À corriger »
+  // sans la bonne formulation ne nous apprend rien — c'est exactement ce qui
+  // s'est produit le 17 août : cinq corrections revenues vides parce que le
+  // compteur avançait au clic sur le bouton, avant qu'un mot soit écrit.
+  function complete(a) {
+    return !!a && (a.v === "ok" || (a.v === "ko" && (a.fix || "").trim().length > 0));
+  }
+
   function refresh() {
     // On ne compte que les réponses portant sur des phrases encore
     // présentes : d'anciennes clés survivent aux corrections appliquées.
-    const done = items.filter((it) => answers[keyOf(it)]).length;
-    countEl.textContent = done + " / " + items.length + " relues";
-    copyBtn.disabled = done === 0;
+    const faites = items.filter((it) => complete(answers[keyOf(it)])).length;
+    const enCours = items.filter((it) => {
+      const a = answers[keyOf(it)];
+      return a && !complete(a);
+    }).length;
+    countEl.textContent = faites + " / " + items.length + " relues" +
+      (enCours ? " · " + enCours + " à compléter" : "");
+    copyBtn.disabled = faites === 0;
   }
 
   items.forEach((item) => {
@@ -1086,6 +1115,11 @@ function linesToCheck() {
     const fix = document.createElement("textarea");
     fix.placeholder = "La bonne façon de le dire…";
 
+    // Il n'existait aucun signe que le texte était retenu : on tape, rien ne
+    // bouge, on croit que ça n'a pas marché. Cette ligne le dit.
+    const etat = document.createElement("p");
+    etat.className = "etat-fix";
+
     function paint() {
       const a = answers[key];
       // Le second argument de toggle() doit être un vrai booléen : passer
@@ -1093,8 +1127,15 @@ function linesToCheck() {
       okBtn.classList.toggle("on", !!a && a.v === "ok");
       koBtn.classList.toggle("on", !!a && a.v === "ko");
       fix.classList.toggle("show", !!a && a.v === "ko");
-      card.classList.toggle("done", !!a);
+      card.classList.toggle("done", complete(a));
+      card.classList.toggle("attente", !!a && !complete(a));
       if (a && a.fix !== undefined) fix.value = a.fix;
+
+      etat.classList.toggle("show", !!a && a.v === "ko");
+      const ecrit = a && (a.fix || "").trim().length > 0;
+      etat.textContent = ecrit ? "✓ Noté, c'est enregistré"
+                               : "Écris la bonne formulation ci-dessus";
+      etat.classList.toggle("ok", !!ecrit);
       refresh();
     }
 
@@ -1105,10 +1146,11 @@ function linesToCheck() {
     };
     fix.oninput = () => {
       answers[key] = { v: "ko", fix: fix.value };
-      save(); refresh();
+      save();
+      paint(); // et non refresh() seul : c'est paint() qui affiche « noté »
     };
 
-    card.append(verdict, fix);
+    card.append(verdict, fix, etat);
     list.appendChild(card);
     paint();
   });
