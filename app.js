@@ -194,7 +194,14 @@ function compterReponse() {
 // du darija. Un enfant apprend par imitation — lui faire entendre le mauvais
 // accent est pire que rien. On sert donc en priorité les enregistrements
 // réels, la synthèse ne servant plus que de dépannage là où il en manque.
-const AUDIO_DIR = "audio/";
+// Chemin figé au chargement, comme tout ce qui touche à l'adresse. En relatif,
+// il était résolu au moment du CLIC — or le premier clic sur Écouter déclenche
+// jalon("ecoute"), qui met justement l'adresse à « /etape/ecoute » juste avant.
+// Le fichier était donc cherché dans /etape/audio/, introuvable, et l'app
+// retombait sur la synthèse : la toute première écoute de chaque session
+// rendait l'arabe classique au lieu de la voix enregistrée. C'est le geste que
+// font 58 % des visiteurs, et leur première impression.
+const AUDIO_DIR = BASE_APP + "audio/";
 let audioIndex = null; // clés disponibles, chargées une fois
 
 function cleAudio(item) {
