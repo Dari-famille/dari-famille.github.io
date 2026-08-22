@@ -330,8 +330,21 @@ async function renderBatch() {
     const err = document.createElement("p");
     err.className = "err";
 
+    // Durée mesurée à la montre, jamais la taille du fichier. Le premier
+    // garde-fou refusait les clips de moins de 1 200 octets : selon le codec
+    // choisi par le téléphone, un mot correctement enregistré peut peser moins
+    // que ça, et la relectrice s'est retrouvée bloquée sur « trop court » alors
+    // qu'elle parlait normalement. Une durée ne dépend d'aucun codec.
+    let debut = 0;
+    let minuteur = null;
+    const DUREE_MINIMALE = 500; // ms
+
     rec.onclick = async () => {
       if (recorder && recorder.state === "recording") {
+        // Deux appuis rapprochés, c'est quelqu'un qui n'a pas vu que
+        // l'enregistrement avait démarré — pas quelqu'un qui veut l'arrêter.
+        // On ignore le second plutôt que de produire un clip vide.
+        if (Date.now() - debut < DUREE_MINIMALE) return;
         recorder.stop();
         return;
       }
@@ -347,6 +360,8 @@ async function renderBatch() {
       currentKey = key;
       recorder.ondataavailable = (e) => e.data.size && parts.push(e.data);
       recorder.onstop = async () => {
+        clearInterval(minuteur);
+        const duree = Date.now() - debut;
         const blob = new Blob(parts, { type: recorder.mimeType || "audio/mp4" });
         rec.classList.remove("on");
         // Le libellé de repli : « Refaire » si un clip existait déjà, sinon on
@@ -354,12 +369,10 @@ async function renderBatch() {
         const etatPrecedent = card.classList.contains("done")
           ? "🎙️ Refaire" : "🎙️ Enregistrer";
 
-        // Un appui sur Stop trop rapide, un micro coupé par un appel entrant,
-        // et le clip est vide. Sans ce contrôle il compterait comme fait : le
-        // compteur avancerait sur du silence, et on ne s'en apercevrait qu'au
-        // moment de découper les fichiers, des semaines plus tard.
-        if (blob.size < 1200) {
-          err.textContent = "Trop court — rien n'a été gardé. Recommence.";
+        // On ne refuse plus que le vrai vide : un micro coupé par un appel
+        // entrant, ou un enregistrement qui n'a produit aucune donnée.
+        if (duree < DUREE_MINIMALE || blob.size === 0) {
+          err.textContent = "Rien n'a été capté. Réessaie en parlant après l'appui.";
           rec.textContent = etatPrecedent;
           return;
         }
@@ -381,8 +394,16 @@ async function renderBatch() {
         refresh();
       };
       recorder.start();
+      debut = Date.now();
       rec.classList.add("on");
-      rec.textContent = "⏹ Stop";
+      // Un libellé qui change ne se remarque pas : elle a appuyé plusieurs fois
+      // sans voir que ça tournait. Un compteur qui défile, si.
+      rec.textContent = "⏹ Stop · 0,0 s";
+      clearInterval(minuteur);
+      minuteur = setInterval(() => {
+        if (!recorder || recorder.state !== "recording") return;
+        rec.textContent = "⏹ Stop · " + ((Date.now() - debut) / 1000).toFixed(1) + " s";
+      }, 100);
     };
 
     play.onclick = async () => {
