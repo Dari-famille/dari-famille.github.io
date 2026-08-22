@@ -3343,9 +3343,18 @@ function speak(cible) {
     if (ext) {
       lecteur = new Audio(AUDIO_DIR + cle + "." + ext);
       // Un fichier absent ou illisible ne doit pas laisser l'utilisateur sans
-      // son : on repasse par la synthèse.
-      lecteur.onerror = () => parler(arabe);
-      lecteur.play().catch(() => parler(arabe));
+      // son : on repasse par la synthèse. Mais les deux voies d'échec —
+      // `onerror` et le rejet de `play()` — se déclenchent souvent ensemble,
+      // et le mot était alors prononcé deux fois de suite en arabe classique.
+      // Un seul repli, quelle que soit la voie qui a échoué.
+      let repliFait = false;
+      const replier = () => {
+        if (repliFait) return;
+        repliFait = true;
+        parler(arabe);
+      };
+      lecteur.onerror = replier;
+      lecteur.play().catch(replier);
       return;
     }
   }
