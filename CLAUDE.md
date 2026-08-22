@@ -56,12 +56,23 @@ Frontière : le **contenu** (darija, sens, usage) est à elle. La **présentatio
 Cloudflare Web Analytics, sans cookie, sans événement personnalisé. Les étapes
 sont simulées par des changements d'adresse (`/etape/<nom>`).
 
-- **Les totaux ne sont pas fiables, l'ordre l'est.** Le tableau a compté plus
-  d'écoutes que d'arrivées, ce qui est impossible. On lit des classements, pas
-  des valeurs absolues.
-- **Ce que la mesure a établi :** les visiteurs écoutent puis repartent ;
-  personne ne joue au quiz ; il n'y a pas de deuxièmes visites. La valeur perçue
-  est un dictionnaire de prononciation, pas un cours.
+- **Lire « Visits », jamais « Page views ».** Les jalons changent l'adresse :
+  chaque étape franchie ajoute des pages vues qui ne sont pas des visiteurs, et
+  fait apparaître le site comme son propre référent. Les chemins `/etape/…`
+  comptent bien les gestes ; le total et la ligne d'auto-référent, non.
+- **Toujours étendre les listes avant de conclure.** Le panneau s'ouvre sur
+  cinq lignes. Le 22 août, cette troncature m'a fait écrire trois jours durant
+  que personne ne jouait au quiz et que le bascule Enfant/Adulte était mort :
+  `5-reponses`, `mode-kid` et `mode-adult` étaient simplement sous la coupure.
+- **Un jalon émis juste après un autre se perd.** `5-reponses` apparaît sans
+  que `1-reponse` n'apparaisse jamais, ce qui est impossible. La file espace
+  les étapes de 400 ms et cela ne suffit pas.
+- **Ce que la mesure a établi :** écouter est le geste dominant (44 écoutes
+  pour 76 visites) ; le quiz est joué mais rare. La valeur perçue est un
+  dictionnaire de prononciation, pas un cours.
+- **Un jalon nouvellement déployé met deux ouvertures à se manifester** chez
+  qui revient : le service worker sert d'abord l'ancienne version. Ne rien
+  conclure d'un zéro pendant les premiers jours.
 - **Ne jamais ouvrir le site en ligne pour vérifier quelque chose** — chaque
   visite pollue une base de quelques dizaines. Utiliser `standalone.html` en
   local, ou une copie servie localement dont la balise a été retirée.
