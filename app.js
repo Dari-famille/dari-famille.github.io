@@ -573,7 +573,14 @@ function renderContent() {
     toggle.appendChild(listBtn);
     toggle.appendChild(quizBtn);
   }
-  toggle.appendChild(memoryBtn);
+  // Le jeu de mémoire reste au mode Enfant, et à lui seul. Là il associe une
+  // image à un son, sans rien à lire : c'est le seul exercice qu'un enfant de
+  // quatre ans peut mener seul. Côté adulte il faisait apparier le français à
+  // la transcription latine — de la reconnaissance de mots écrits, alors que
+  // l'adulte cherche à PRONONCER. Il doublonnait avec le quiz, en moins bien,
+  // et occupait un quatrième onglet sur un écran dont la mesure dit que
+  // personne ne se sert : les gens cherchent un mot, l'écoutent, et repartent.
+  if (state.mode === "kid") toggle.appendChild(memoryBtn);
   // Le générateur de phrases demande de lire des mots et de composer : hors
   // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
   // décourage plus qu'il n'apprend.
@@ -589,8 +596,13 @@ function renderContent() {
 
   if (state.section === "quiz") {
     renderQuiz(body);
-  } else if (state.section === "memory") {
+  } else if (state.section === "memory" && state.mode === "kid") {
     renderMemory(body);
+  } else if (state.section === "memory") {
+    // Un adulte revenant sur l'app alors qu'il l'avait quittée sur le jeu de
+    // mémoire n'a plus d'onglet pour en sortir : on le ramène à la liste.
+    state.section = "list";
+    renderAdultList(body);
   } else if (state.section === "builder") {
     renderBuilder(body);
   } else if (state.mode === "kid") {
