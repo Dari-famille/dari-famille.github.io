@@ -3212,8 +3212,12 @@ function saveScore() {
 //
 // Aucune donnée personnelle n'est transmise : ce sont des adresses, comptées
 // comme n'importe quelle page vue, sans identifiant ni cookie.
+// Adresses figées au chargement. Rien dans l'app ne doit lire `location` en
+// direct : pendant les 400 ms où un jalon est en vol, l'adresse porte
+// « /etape/… » et tout ce qui en dépend part un cran trop bas.
 const URL_APP = location.pathname + location.search + location.hash;
 const BASE_APP = location.pathname.replace(/[^/]*$/, "");
+const RECHERCHE_APP = location.search;
 const jalonsVus = new Set();
 const jalonsEnAttente = [];
 let jalonEnCours = false;
@@ -4930,7 +4934,7 @@ function rechercher(q) {
 //   dari-famille.github.io/?s=compliment-enfant
 function situationDemandee() {
   try {
-    const id = new URLSearchParams(location.search).get("s");
+    const id = new URLSearchParams(RECHERCHE_APP).get("s");
     if (!id) return null;
     return SITUATIONS.find((x) => x.id === id) || null;
   } catch (e) {
@@ -4944,7 +4948,12 @@ function situationDemandee() {
 // naturelle du produit n'existe pas. L'API de partage ouvre le sélecteur
 // natif du téléphone ; ailleurs on copie le lien.
 function partager() {
-  const url = location.origin + location.pathname;
+  // Adresse figée au chargement, jamais lue en direct : pendant les 400 ms où
+  // un jalon porte « /etape/… », location.pathname renvoie cette adresse-là.
+  // On aurait partagé « dari-famille.github.io/etape/ecoute » — un lien mort
+  // pour celui qui le reçoit, et le partage privé est justement le premier
+  // chemin vers l'app.
+  const url = location.origin + BASE_APP;
   const donnees = {
     title: "Dari — le darija en famille",
     text: "Pour que nos enfants parlent avec leurs grands-parents. Gratuit, et ça marche sans connexion.",
