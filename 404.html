@@ -17,9 +17,16 @@
 
     Le renvoi remplace l'entrée d'historique au lieu d'en ajouter une, sans
     quoi le bouton Retour ramènerait ici en boucle.
+
+    RACINE ABSOLUE, ET NON « ./ ». Depuis /etape/ecoute, « ./ » résout vers
+    /etape/ — qui n'existe pas davantage et sert donc à nouveau ce fichier,
+    lequel renvoie vers /etape/ : le visiteur reste piégé sur une page vide,
+    et le lien de secours ci-dessous, relatif lui aussi, ne le sortait pas
+    non plus. Vérifié le 22 août contre un serveur imitant GitHub Pages.
+    Le site est publié à la racine du domaine : « / » est donc l'app.
   -->
   <script>
-    location.replace("./");
+    location.replace("/");
   </script>
   <style>
     body {
@@ -43,6 +50,6 @@
 <body>
   <!-- Visible uniquement si le JavaScript est désactivé. -->
   <p>🌙 Dari</p>
-  <p><a href="./">Revenir à l'app</a></p>
+  <p><a href="/">Revenir à l'app</a></p>
 </body>
 </html>
