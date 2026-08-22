@@ -250,10 +250,24 @@ let stream = null;
 let recorder = null;
 let currentKey = null;
 
+// Un flux neuf à CHAQUE enregistrement, et on le relâche aussitôt après.
+//
+// La version précédente gardait le même flux pour toute la session. Sur
+// Safari iOS, la piste audio cesse de produire quoi que ce soit une fois
+// qu'un MediaRecorder l'a utilisée puis arrêtée : le premier mot était
+// enregistré, tous les suivants donnaient un fichier vide. D'où « rien n'a
+// été capté » alors que le chronomètre tournait — le micro écoutait dans le
+// vide. C'est la cause des trois échecs de la relectrice.
 async function ensureMic() {
-  if (stream) return stream;
+  libererMic();
   stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   return stream;
+}
+
+function libererMic() {
+  if (!stream) return;
+  stream.getTracks().forEach((t) => t.stop());
+  stream = null;
 }
 
 function pickMime() {
@@ -348,6 +362,10 @@ async function renderBatch() {
         recorder.stop();
         return;
       }
+      // Le message d'échec précédent restait affiché sous une carte même
+      // après une réussite : elle voyait « rien n'a été capté » sous un mot
+      // pourtant enregistré. On repart d'une carte propre à chaque essai.
+      err.textContent = "";
       try {
         await ensureMic();
       } catch (e) {
@@ -361,6 +379,7 @@ async function renderBatch() {
       recorder.ondataavailable = (e) => e.data.size && parts.push(e.data);
       recorder.onstop = async () => {
         clearInterval(minuteur);
+        libererMic(); // le prochain enregistrement redemandera un flux neuf
         const duree = Date.now() - debut;
         const blob = new Blob(parts, { type: recorder.mimeType || "audio/mp4" });
         rec.classList.remove("on");
