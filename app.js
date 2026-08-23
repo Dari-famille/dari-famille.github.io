@@ -1165,6 +1165,56 @@ function situationIntro(sit) {
   return state.mode === "kid" && sit.kidIntro ? sit.kidIntro : sit.intro;
 }
 
+// L'app fait deux métiers, et ils n'ont pas le même public.
+//
+// Répondre à une question tout de suite — c'est le répertoire, et c'est ce que
+// veulent la quasi-totalité des arrivants : ils viennent d'une vidéo, cherchent
+// un mot, l'écoutent et repartent. L'écran d'arrivée sert cela, et y remettre
+// des onglets défait ce qu'on a corrigé.
+//
+// Créer une habitude — c'est le quiz, avec la révision espacée derrière lui.
+// C'est la seule chose de toute l'app capable de dire « trois mots à revoir
+// aujourd'hui », donc la seule qui donne une raison de revenir. Or rien ici ne
+// s'accumule, et c'est le problème de fond.
+//
+// Depuis que l'arrivée se fait sur les situations, ce second métier n'avait
+// plus d'adresse. On lui en rend une, mais seulement pour qui est déjà revenu
+// ou a installé l'app : ceux-là ont montré leur intention, et pour eux le
+// répertoire seul est un peu maigre. Un premier visiteur ne voit rien.
+function renderEntrainement(content) {
+  if (state.mode === "kid") return;        // l'enfant a déjà ses onglets
+  if (!DEJA_VENU && !isInstalled()) return;
+  if (typeof SRS === "undefined") return;
+
+  const cat = CATEGORIES.find((c) => c.kidFriendly) || CATEGORIES[0];
+  if (!cat) return;
+  const s = SRS.stats(cat.items);
+
+  const lien = document.createElement("button");
+  lien.type = "button";
+  lien.className = "entrainement";
+  // Le nombre à revoir vaut mieux qu'un libellé fixe : c'est lui qui rappelle
+  // qu'il y a quelque chose à faire aujourd'hui.
+  const reste = s && s.due > 0
+    ? s.due + (s.due > 1 ? " mots à revoir" : " mot à revoir")
+    : "Réviser les mots";
+  lien.innerHTML =
+    '<span class="entrainement-icone">🎯</span>' +
+    '<span class="entrainement-texte"><b>S\'entraîner</b>' +
+    '<span>' + reste + '</span></span>';
+  lien.addEventListener("click", () => {
+    state.categoryId = cat.id;
+    state.section = "quiz";
+    state.quiz.answered = false;
+    jalon("entrainement");
+    naviguerVers(() => {
+      renderCategoryNav();
+      renderContent();
+    });
+  });
+  content.appendChild(lien);
+}
+
 function renderSituations(content) {
   const sits = currentSituations();
   const current = sits.find((s) => s.id === state.situationId);
@@ -1202,6 +1252,7 @@ function renderSituations(content) {
       grid.appendChild(card);
     });
     content.appendChild(grid);
+    renderEntrainement(content);
     // En fin de liste : la personne a parcouru l'écran, elle n'est pas
     // interrompue.
     renderOffre(content);
@@ -1996,6 +2047,12 @@ if (cible) {
   state.situationId = cible.id;
   markWelcomed(); // il sait déjà ce qu'il vient chercher
 }
+
+// Figé AVANT que marquerVenu() ne pose le marqueur, quelques lignes plus bas.
+// Sans cela, le second rendu — celui déclenché par l'arrivée de l'index audio —
+// trouverait « déjà venu » chez quelqu'un qui arrive à l'instant, et lui
+// montrerait l'entrée réservée à ceux qui reviennent.
+const DEJA_VENU = dejaVenu();
 
 renderCategoryNav();
 renderContent();
