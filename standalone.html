@@ -292,6 +292,15 @@ body {
   margin-top: 4px;
 }
 
+/* Un mot enregistré par la locutrice native se distingue de la synthèse du
+   téléphone. C'est la seule différence qui compte pour un visiteur, et rien
+   ne la montrait : le bouton était identique dans les deux cas, y compris
+   pendant les douze jours où l'app ne rendait que de l'arabe classique.
+   L'émeraude est la couleur du « validé » partout ailleurs dans l'app. */
+.speak-btn.vraie-voix {
+  background: var(--emerald, #1c6f53);
+}
+
 .speak-btn:active {
   transform: scale(0.96);
 }
@@ -1439,10 +1448,18 @@ body {
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.25;
+  /* Deux lignes réservées, occupées ou non. Sans cette hauteur plancher, une
+     traduction courte donnait une puce plus basse que sa voisine et la rangée
+     paraissait bancale — sur le tout premier bloc que voit un arrivant. */
+  min-height: 2em;
 }
 
 .videos-son {
-  margin-top: 4px;
+  /* Poussé en bas de la puce : les trois lignes au-dessus n'ont pas toujours
+     la même hauteur, et c'est cette ligne-là qui doit s'aligner d'une puce à
+     l'autre. */
+  margin-top: auto;
+  padding-top: 4px;
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--majorelle);
@@ -1472,10 +1489,11 @@ body {
     Un mot qui sonne faux, une phrase qui manque, une situation qu'on a oubliée&nbsp;?
     <a href="https://ig.me/m/darifamille" target="_blank" rel="noopener">Écrivez-nous sur Instagram</a> ou <a href="mailto:dari.famille@proton.me?subject=Dari">par mail</a> — on lit tout.</p>
     <p class="mesure">Une mesure d'audience anonyme compte les visites, sans cookie ni donnée personnelle.</p>
-    <p class="audio-disclaimer">🎙️ <strong>La prononciation, on y travaille en ce moment.</strong>
-    Tant qu'un mot n'a pas été enregistré, « Écouter » utilise la voix du téléphone,
-    qui lit en arabe classique et non en darija. Nous enregistrons les vraies voix
-    marocaines une par une : chaque mise à jour en apporte de nouvelles.</p>
+    <p class="audio-disclaimer">🎙️ <strong>200 mots sont dits par une vraie voix
+    marocaine</strong> — près de six entrées sur dix, et la totalité des situations
+    de famille. Le bouton vert signale ces mots-là. Pour le reste, « Écouter »
+    utilise encore la voix du téléphone, qui lit en arabe classique et non en
+    darija : on enregistre la suite par lots.</p>
   </footer>
   <script>
 // Contenu pédagogique : Darija (arabe marocain)
@@ -3332,10 +3350,22 @@ fetch(AUDIO_DIR + "index.json")
   .then((r) => (r.ok ? r.json() : null))
   .then((d) => {
     audioIndex = d && d.clips ? d.clips : {};
+    // Les mentions « vraie voix » dépendent de cet index, qui arrive après le
+    // premier rendu. Sans ce second passage, elles n'apparaîtraient qu'au
+    // prochain changement d'écran — c'est-à-dire jamais pour la plupart des
+    // visiteurs, qui écoutent une fois et repartent.
+    if (Object.keys(audioIndex).length) renderContent();
   })
   .catch(() => {
     audioIndex = {};
   });
+
+// Un mot enregistré par la locutrice native, par opposition à la synthèse du
+// téléphone. C'est la seule différence qui compte pour un visiteur, et rien
+// ne la montrait : « 🔊 Écouter » était identique dans les deux cas.
+function aUneVoix(item) {
+  return !!(item && audioIndex && audioIndex[cleAudio(item)]);
+}
 
 let lecteur = null;
 
@@ -4243,8 +4273,8 @@ function renderSituations(content) {
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
     `;
     const btn = document.createElement("button");
-    btn.className = "speak-btn";
-    btn.textContent = "🔊 Écouter";
+    btn.className = "speak-btn" + (aUneVoix(line) ? " vraie-voix" : "");
+    btn.textContent = aUneVoix(line) ? "🎙️ Écouter" : "🔊 Écouter";
     btn.addEventListener("click", () => speak(line));
     card.insertBefore(btn, card.querySelector(".line-note"));
     list.appendChild(card);
@@ -4735,7 +4765,9 @@ function renderMotsDesVideos(content) {
     puce.innerHTML =
       `<span class="videos-mot">${item.latin}</span>` +
       `<span class="videos-fr">${item.fr}</span>` +
-      `<span class="videos-son">🔊 Écouter</span>`;
+      `<span class="videos-son">${aUneVoix(item)
+        ? "🎙️ Vraie voix"
+        : "🔊 Écouter"}</span>`;
     puce.addEventListener("click", () => speak(item));
     piste.appendChild(puce);
   });
@@ -4816,8 +4848,8 @@ function carteEntree(item, source) {
   actions.className = "entry-actions";
 
   const speakBtn = document.createElement("button");
-  speakBtn.className = "speak-btn";
-  speakBtn.textContent = "🔊 Écouter";
+  speakBtn.className = "speak-btn" + (aUneVoix(item) ? " vraie-voix" : "");
+  speakBtn.textContent = aUneVoix(item) ? "🎙️ Écouter" : "🔊 Écouter";
   speakBtn.addEventListener("click", () => speak(item));
 
   actions.append(speakBtn, boutonFavori(item, () => {

@@ -238,10 +238,22 @@ fetch(AUDIO_DIR + "index.json")
   .then((r) => (r.ok ? r.json() : null))
   .then((d) => {
     audioIndex = d && d.clips ? d.clips : {};
+    // Les mentions « vraie voix » dépendent de cet index, qui arrive après le
+    // premier rendu. Sans ce second passage, elles n'apparaîtraient qu'au
+    // prochain changement d'écran — c'est-à-dire jamais pour la plupart des
+    // visiteurs, qui écoutent une fois et repartent.
+    if (Object.keys(audioIndex).length) renderContent();
   })
   .catch(() => {
     audioIndex = {};
   });
+
+// Un mot enregistré par la locutrice native, par opposition à la synthèse du
+// téléphone. C'est la seule différence qui compte pour un visiteur, et rien
+// ne la montrait : « 🔊 Écouter » était identique dans les deux cas.
+function aUneVoix(item) {
+  return !!(item && audioIndex && audioIndex[cleAudio(item)]);
+}
 
 let lecteur = null;
 
@@ -1149,8 +1161,8 @@ function renderSituations(content) {
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
     `;
     const btn = document.createElement("button");
-    btn.className = "speak-btn";
-    btn.textContent = "🔊 Écouter";
+    btn.className = "speak-btn" + (aUneVoix(line) ? " vraie-voix" : "");
+    btn.textContent = aUneVoix(line) ? "🎙️ Écouter" : "🔊 Écouter";
     btn.addEventListener("click", () => speak(line));
     card.insertBefore(btn, card.querySelector(".line-note"));
     list.appendChild(card);
@@ -1641,7 +1653,9 @@ function renderMotsDesVideos(content) {
     puce.innerHTML =
       `<span class="videos-mot">${item.latin}</span>` +
       `<span class="videos-fr">${item.fr}</span>` +
-      `<span class="videos-son">🔊 Écouter</span>`;
+      `<span class="videos-son">${aUneVoix(item)
+        ? "🎙️ Vraie voix"
+        : "🔊 Écouter"}</span>`;
     puce.addEventListener("click", () => speak(item));
     piste.appendChild(puce);
   });
@@ -1722,8 +1736,8 @@ function carteEntree(item, source) {
   actions.className = "entry-actions";
 
   const speakBtn = document.createElement("button");
-  speakBtn.className = "speak-btn";
-  speakBtn.textContent = "🔊 Écouter";
+  speakBtn.className = "speak-btn" + (aUneVoix(item) ? " vraie-voix" : "");
+  speakBtn.textContent = aUneVoix(item) ? "🎙️ Écouter" : "🔊 Écouter";
   speakBtn.addEventListener("click", () => speak(item));
 
   actions.append(speakBtn, boutonFavori(item, () => {

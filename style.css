@@ -258,6 +258,15 @@ body {
   margin-top: 4px;
 }
 
+/* Un mot enregistré par la locutrice native se distingue de la synthèse du
+   téléphone. C'est la seule différence qui compte pour un visiteur, et rien
+   ne la montrait : le bouton était identique dans les deux cas, y compris
+   pendant les douze jours où l'app ne rendait que de l'arabe classique.
+   L'émeraude est la couleur du « validé » partout ailleurs dans l'app. */
+.speak-btn.vraie-voix {
+  background: var(--emerald, #1c6f53);
+}
+
 .speak-btn:active {
   transform: scale(0.96);
 }
@@ -1405,10 +1414,18 @@ body {
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.25;
+  /* Deux lignes réservées, occupées ou non. Sans cette hauteur plancher, une
+     traduction courte donnait une puce plus basse que sa voisine et la rangée
+     paraissait bancale — sur le tout premier bloc que voit un arrivant. */
+  min-height: 2em;
 }
 
 .videos-son {
-  margin-top: 4px;
+  /* Poussé en bas de la puce : les trois lignes au-dessus n'ont pas toujours
+     la même hauteur, et c'est cette ligne-là qui doit s'aligner d'une puce à
+     l'autre. */
+  margin-top: auto;
+  padding-top: 4px;
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--majorelle);
