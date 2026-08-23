@@ -3272,6 +3272,27 @@ function viderJalons() {
 // d'usage le plus fort qu'on puisse recevoir sans compte utilisateur.
 if (isInstalled()) jalon("app-installee");
 
+// Provenance déclarée dans le lien : dari-famille.github.io/?src=yt
+//
+// La mesure d'audience ne conserve pas les paramètres d'adresse — les chemins
+// relevés sont « / » et « /index.html », jamais « /?src=yt ». Le tag était donc
+// posé pour rien. On le convertit en étape, seule chose que Cloudflare sache
+// compter, et la provenance devient lisible comme le reste.
+//
+// C'est le seul moyen de savoir ce que YouTube envoie vraiment : là-bas les
+// liens ne sont pas cliquables, donc aucun référent n'est transmis et ces
+// visites se rangent en « direct », avec le partage privé.
+(function sourceDeclaree() {
+  try {
+    const src = new URLSearchParams(RECHERCHE_APP).get("src");
+    // Filtre volontairement étroit : cette valeur finit dans l'adresse, et une
+    // chaîne arbitraire venue d'un lien tiers n'a rien à y faire.
+    if (src && /^[a-z0-9-]{1,12}$/i.test(src)) jalon("venu-de-" + src.toLowerCase());
+  } catch (e) {
+    /* paramètre illisible : la mesure est optionnelle */
+  }
+})();
+
 let reponsesSession = 0;
 let ecoutesSession = 0;
 
