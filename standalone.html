@@ -5116,26 +5116,59 @@ function renderInstallBanner() {
   // iOS n'expose aucune API d'installation : Safari exige un passage par le
   // menu Partager, qu'il faut donc expliquer plutôt que déclencher.
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (!deferredInstall && !isIOS) return;
+
+  // Le navigateur intégré d'Instagram ne sait pas installer une app. Sur iOS
+  // son menu Partager n'a pas « Sur l'écran d'accueil » ; sur Android il
+  // n'émet jamais beforeinstallprompt. Or c'est par là qu'arrive l'essentiel
+  // du trafic — Instagram apparaît dans la moitié des pages vues.
+  //
+  // Conséquence de la version précédente : les visiteurs Android venus
+  // d'Instagram, c'est-à-dire le plus gros segment, ne voyaient JAMAIS
+  // d'invitation (ni prompt, ni iOS, donc sortie immédiate). Et les visiteurs
+  // iPhone lisaient une consigne inapplicable là où ils se trouvaient. Deux
+  // installations en une semaine s'expliquent largement par là.
+  const dansNavigateurIntegre = /Instagram|FBAN|FBAV|Line\/|MicroMessenger/i.test(
+    navigator.userAgent
+  );
+  if (!deferredInstall && !isIOS && !dansNavigateurIntegre) return;
 
   const bar = document.createElement("div");
   bar.className = "install-bar";
   // Même emplacement à l'écran : on retire la note plutôt que de la recouvrir.
   const note = document.querySelector(".voice-note");
   if (note) note.remove();
+
+  let consigne;
+  if (dansNavigateurIntegre) {
+    // On ne peut pas ouvrir Safari ou Chrome à sa place : iOS et Android
+    // bloquent ce saut depuis un navigateur intégré. On explique donc le
+    // premier geste, celui sans lequel les suivants n'existent pas.
+    consigne =
+      "Ouvrez-la d'abord dans votre navigateur : menu " +
+      "<span aria-hidden=\"true\">⋯</span> en haut à droite, " +
+      "« Ouvrir dans le navigateur ». Ensuite seulement, " +
+      (isIOS ? "Partager <span aria-hidden=\"true\">→</span> « Sur l'écran d'accueil »"
+             : "le menu du navigateur propose « Installer l'application »") + ".";
+  } else if (isIOS) {
+    consigne = "Partager <span aria-hidden=\"true\">→</span> « Sur l'écran d'accueil »";
+  } else {
+    consigne = "Installez l'app : elle marche sans connexion.";
+  }
+
   bar.innerHTML = `
     <span class="install-text">
       <strong>Gardez Dari sous la main</strong>
-      ${isIOS
-        ? "Partager <span aria-hidden=\"true\">→</span> « Sur l'écran d'accueil »"
-        : "Installez l'app : elle marche sans connexion."}
+      ${consigne}
     </span>
   `;
 
   const actions = document.createElement("div");
   actions.className = "install-actions";
 
-  if (!isIOS) {
+  // Pas de bouton « Installer » sans vraie fenêtre système à déclencher : dans
+  // un navigateur intégré, il ne ferait rien et l'invitation perdrait toute
+  // crédibilité.
+  if (!isIOS && !dansNavigateurIntegre) {
     const install = document.createElement("button");
     install.className = "install-btn";
     install.textContent = "Installer";
