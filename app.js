@@ -58,10 +58,6 @@ const state = {
     autoNext: null, // minuterie d'enchaînement en mode Enfant
     mode: null, // mode dans lequel la question a été tirée
   },
-  builder: {
-    verbId: null,
-    object: null,
-  },
   situationId: null, // situation ouverte, null = liste des situations
   query: "", // recherche en cours
   memory: {
@@ -549,9 +545,6 @@ function renderContent() {
   // chaque pixel vertical a été gagné pour faire tenir le quiz à l'écran.
   document.body.classList.toggle("mode-enfant", state.mode === "kid");
 
-  document.getElementById("category-nav").style.display =
-    state.section === "builder" ? "none" : "";
-
   renderSearchBar(content);
 
   // Tout ce qui n'est pas la recherche vit dans ce conteneur, que la frappe
@@ -601,10 +594,6 @@ function renderContent() {
     buildMemoryDeck();
     naviguerVers(renderContent);
   });
-  const builderBtn = makeToggleBtn("🧩 Phrase", state.section === "builder", () => {
-    state.section = "builder";
-    naviguerVers(renderContent);
-  });
   if (state.mode === "kid") {
     // Le quiz est ce qui retient un enfant : il passe devant les cartes.
     toggle.appendChild(quizBtn);
@@ -621,10 +610,6 @@ function renderContent() {
   // et occupait un quatrième onglet sur un écran dont la mesure dit que
   // personne ne se sert : les gens cherchent un mot, l'écoutent, et repartent.
   if (state.mode === "kid") toggle.appendChild(memoryBtn);
-  // Le générateur de phrases demande de lire des mots et de composer : hors
-  // de portée à quatre ans, et un onglet qu'on ouvre sans rien y comprendre
-  // décourage plus qu'il n'apprend.
-  if (state.mode !== "kid") toggle.appendChild(builderBtn);
   // Les mots des vidéos passent AVANT les onglets : ce sont eux la raison de
   // la visite, les onglets ne sont que de la navigation. Quatre rangées de
   // chrome avant le contenu promis, c'était trois de trop.
@@ -644,7 +629,10 @@ function renderContent() {
     state.section = "list";
     renderAdultList(body);
   } else if (state.section === "builder") {
-    renderBuilder(body);
+    // Le générateur de phrases a été retiré. Quelqu'un qui avait quitté l'app
+    // sur cet onglet n'aurait plus de bouton pour en sortir.
+    state.section = "list";
+    renderAdultList(body);
   } else if (state.mode === "kid") {
     renderKidCards(body);
   } else {
@@ -1385,90 +1373,18 @@ function onMemoryFlip(idx) {
   }
 }
 
-// ---- Générateur de phrases (Je + verbe + complément) ----
-function renderBuilder(content) {
-  const box = document.createElement("div");
-  box.className = "quiz-box";
-
-  const intro = document.createElement("p");
-  intro.className = "note";
-  intro.style.marginTop = "0";
-  intro.textContent = "Choisis un verbe, puis un mot, pour construire une petite phrase.";
-  box.appendChild(intro);
-
-  const verb = SENTENCE_BUILDER.verbs.find((v) => v.id === state.builder.verbId);
-
-  const verbTitle = document.createElement("p");
-  verbTitle.innerHTML = "<strong>1. Un verbe</strong>";
-  box.appendChild(verbTitle);
-
-  const verbRow = document.createElement("div");
-  verbRow.className = "quiz-options";
-  SENTENCE_BUILDER.verbs.forEach((v) => {
-    const btn = document.createElement("button");
-    btn.className = "quiz-option" + (verb && verb.id === v.id ? " correct" : "");
-    btn.textContent = `${v.emoji} ${v.fr}`;
-    btn.addEventListener("click", () => {
-      state.builder.verbId = v.id;
-      state.builder.object = null;
-      renderContent();
-    });
-    verbRow.appendChild(btn);
-  });
-  box.appendChild(verbRow);
-
-  if (verb) {
-    const objTitle = document.createElement("p");
-    objTitle.innerHTML = "<strong>2. Un mot</strong>";
-    box.appendChild(objTitle);
-
-    const objects = getSentenceObjects(verb.tag);
-    const objGrid = document.createElement("div");
-    objGrid.className = "quiz-options";
-    objects.forEach((obj) => {
-      const btn = document.createElement("button");
-      btn.className =
-        "quiz-option" +
-        (state.builder.object && state.builder.object.fr === obj.fr ? " correct" : "");
-      btn.textContent = `${obj.emoji} ${obj.fr}`;
-      btn.addEventListener("click", () => {
-        state.builder.object = obj;
-        speak(`${SENTENCE_BUILDER.subject.arabic} ${verb.arabic} ${obj.arabic}`);
-        renderContent();
-        // La grille des mots fait plus de deux mille pixels : la phrase
-        // composée s'affichait sous elle, très loin hors de l'écran. On
-        // cliquait un mot et il ne se passait rien de visible — et comme une
-        // phrase composée n'a pas d'enregistrement, la synthèse reste muette
-        // sur un appareil sans voix arabe. Rien à voir, rien à entendre.
-        const phrase = document.querySelector(".builder-resultat");
-        if (phrase) phrase.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
-      objGrid.appendChild(btn);
-    });
-    box.appendChild(objGrid);
-  }
-
-  if (verb && state.builder.object) {
-    const obj = state.builder.object;
-    const result = document.createElement("div");
-    result.className = "vocab-card builder-resultat";
-    result.style.marginTop = "20px";
-    result.innerHTML = `
-      <div class="fr">${SENTENCE_BUILDER.subject.fr} ${verb.fr} ${obj.fr}</div>
-      <div class="latin">${SENTENCE_BUILDER.subject.latin} ${verb.latin} ${obj.latin}</div>
-      <div class="arabic">${SENTENCE_BUILDER.subject.arabic} ${verb.arabic} ${obj.arabic}</div>
-      <button class="speak-btn">🔊 Écouter</button>
-    `;
-    result
-      .querySelector(".speak-btn")
-      .addEventListener("click", () =>
-        speak(`${SENTENCE_BUILDER.subject.arabic} ${verb.arabic} ${obj.arabic}`)
-      );
-    box.appendChild(result);
-  }
-
-  content.appendChild(box);
-}
+// Le générateur de phrases a été retiré le 23 août. Il composait « Je + verbe
+// + mot » à partir de tout ce qui portait une étiquette compatible, et
+// produisait donc « Ana bghit bagra » — « je veux vache ». Personne n'avait
+// jamais relu ces combinaisons, il y en avait des centaines, et c'était le
+// seul endroit de l'app capable d'afficher une phrase que la relectrice
+// n'avait pas validée. Dans une app dont la promesse est de ne pas se tromper
+// devant sa belle-famille, c'était le mauvais risque à porter.
+//
+// Le français collait en plus les mots en forme de dictionnaire, sans
+// article : « Je veux Vache ». Corriger cela demandait une donnée
+// grammaticale par mot, pour un onglet que la mesure ne voyait jamais
+// s'ouvrir.
 
 // ---- Premier accueil ----
 // Sans cet écran, quelqu'un qui arrive d'un lien tombe sur une grille de
