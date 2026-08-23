@@ -1435,6 +1435,13 @@ function renderBuilder(content) {
         state.builder.object = obj;
         speak(`${SENTENCE_BUILDER.subject.arabic} ${verb.arabic} ${obj.arabic}`);
         renderContent();
+        // La grille des mots fait plus de deux mille pixels : la phrase
+        // composée s'affichait sous elle, très loin hors de l'écran. On
+        // cliquait un mot et il ne se passait rien de visible — et comme une
+        // phrase composée n'a pas d'enregistrement, la synthèse reste muette
+        // sur un appareil sans voix arabe. Rien à voir, rien à entendre.
+        const phrase = document.querySelector(".builder-resultat");
+        if (phrase) phrase.scrollIntoView({ behavior: "smooth", block: "center" });
       });
       objGrid.appendChild(btn);
     });
@@ -1444,7 +1451,7 @@ function renderBuilder(content) {
   if (verb && state.builder.object) {
     const obj = state.builder.object;
     const result = document.createElement("div");
-    result.className = "vocab-card";
+    result.className = "vocab-card builder-resultat";
     result.style.marginTop = "20px";
     result.innerHTML = `
       <div class="fr">${SENTENCE_BUILDER.subject.fr} ${verb.fr} ${obj.fr}</div>
