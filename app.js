@@ -1066,6 +1066,102 @@ function renderAdultQuizBody(box) {
   box.appendChild(nextBtn);
 }
 
+// ---- Sonder l'intention d'achat, sans rien vendre ni rien collecter ----
+//
+// Tout le raisonnement commercial repose sur un taux d'achat que personne n'a
+// jamais mesuré. On pose donc la question, et on compte — c'est la seule
+// donnée qui manque, et la moins chère à obtenir.
+//
+// Trois contraintes ont dessiné ce bloc.
+//
+// Aucune collecte : pas de courriel, pas de formulaire. Le responsable de
+// traitement n'est pas défini tant que l'objet social de la holding ne l'est
+// pas, et une adresse recueillie sans base légale vaut moins que rien.
+//
+// Aucune promesse fausse : le bouton dit « ça m'intéresse », pas « acheter ».
+// Quelqu'un qui clique en croyant payer et qui n'obtient rien serait floué,
+// et une app qui vient de gagner sa crédibilité ne peut pas se le permettre.
+//
+// Aucune interruption : le bloc n'est ni une fenêtre ni une bannière. Il se
+// pose en fin de contenu, là où la personne a fini de lire — la demande de
+// retour placée au bout de trois écoutes n'a jamais rien produit, parce que
+// presque personne n'écoute trois fois.
+//
+// Et aucun prix affiché : on ne sait pas encaisser, on n'a pas d'objet social
+// pour le faire, et un montant annoncé qu'on ne peut pas honorer est une
+// promesse creuse. On mesure l'intérêt pour la chose, pas l'élasticité au
+// prix — c'est la question qui vient en premier de toute façon.
+const OFFRE_KEY = "dari-offre-v1";
+
+function offreDejaRepondue() {
+  try {
+    return localStorage.getItem(OFFRE_KEY) === "clic";
+  } catch (e) {
+    return false;
+  }
+}
+
+function renderOffre(content) {
+  if (state.mode === "kid") return;          // on ne demande rien à un enfant
+  if (offreDejaRepondue()) return;
+  if (content.querySelector(".offre")) return;
+
+  const box = document.createElement("section");
+  box.className = "offre";
+
+  const titre = document.createElement("p");
+  titre.className = "offre-titre";
+  titre.textContent = "On prépare une version complète.";
+
+  const corps = document.createElement("p");
+  corps.className = "offre-corps";
+  corps.innerHTML =
+    "Les <strong>341 phrases</strong> dites par une vraie voix marocaine, " +
+    "au lieu de 200 aujourd'hui. Hors-ligne, sans compte.<br>" +
+    "Ce que vous avez sous les yeux restera gratuit.";
+
+  const question = document.createElement("p");
+  question.className = "offre-question";
+  question.textContent = "Est-ce que ça vous intéresserait ?";
+
+  const oui = document.createElement("button");
+  oui.type = "button";
+  oui.className = "offre-oui";
+  oui.textContent = "Oui, ça m'intéresse";
+
+  oui.addEventListener("click", () => {
+    jalon("interet-paiement");
+    try {
+      localStorage.setItem(OFFRE_KEY, "clic");
+    } catch (e) {
+      /* sans stockage, la question pourra revenir : sans gravité */
+    }
+    // On ne laisse pas la personne sans suite : elle vient de dire oui à
+    // quelque chose qui n'existe pas encore, on lui dit quand elle le saura.
+    box.classList.add("offre-merci");
+    box.replaceChildren();
+    const merci = document.createElement("p");
+    merci.className = "offre-titre";
+    merci.textContent = "Merci — c'est noté.";
+    const suite = document.createElement("p");
+    suite.className = "offre-corps";
+    suite.textContent =
+      "Rien à payer aujourd'hui, elle n'est pas prête. On prévient sur " +
+      "Instagram le jour où elle l'est.";
+    const lien = document.createElement("a");
+    lien.className = "offre-oui";
+    lien.href = INSTAGRAM_PROFIL;
+    lien.target = "_blank";
+    lien.rel = "noopener";
+    lien.textContent = "Suivre pour être prévenu";
+    lien.addEventListener("click", () => jalon("suivre-insta"));
+    box.append(merci, suite, lien);
+  });
+
+  box.append(titre, corps, question, oui);
+  content.appendChild(box);
+}
+
 // ---- Situations ----
 // Deux écrans : la liste des scènes, puis le détail d'une scène. Le détail se
 // lit comme une antisèche qu'on ouvre juste avant d'entrer dans la pièce.
@@ -1118,6 +1214,9 @@ function renderSituations(content) {
       grid.appendChild(card);
     });
     content.appendChild(grid);
+    // En fin de liste : la personne a parcouru l'écran, elle n'est pas
+    // interrompue.
+    renderOffre(content);
     return;
   }
 
@@ -1168,6 +1267,9 @@ function renderSituations(content) {
     list.appendChild(card);
   });
   content.appendChild(list);
+  // Fin de la scène, après les phrases : c'est le lecteur le plus engagé de
+  // l'app, et il vient d'éprouver ce qu'on lui propose d'étendre.
+  renderOffre(content);
 }
 
 // ---- Jeu de mémoire (paires) ----
