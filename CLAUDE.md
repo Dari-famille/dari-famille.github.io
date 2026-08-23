@@ -78,6 +78,30 @@ sont simulées par des changements d'adresse (`/etape/<nom>`).
   local, ou une copie servie localement dont la balise a été retirée.
   `relecture.html` et `enregistrement.html` ne portent pas la balise.
 
+## Auditer
+
+Les audits par fonction ne trouvent pas les pannes qui comptent. Trois d'entre
+elles ont été découvertes à l'usage, par les personnes concernées, après un
+audit déclaré propre : la page d'enregistrement cassée trois fois de suite, et
+l'invitation à installer jamais affichée au plus gros segment du trafic.
+
+- **Tester le DEUXIÈME usage, pas le premier.** Le micro fonctionnait au premier
+  enregistrement et ne produisait plus rien au suivant, Safari iOS tuant la
+  piste audio après le premier MediaRecorder. Un test qui s'arrête au premier
+  cas déclare l'outil bon.
+- **Tester dans le contexte d'arrivée.** Personne n'ouvre l'app dans un
+  navigateur nu : on arrive par Instagram, dans un navigateur intégré qui
+  n'émet pas `beforeinstallprompt` et dont le menu Partager n'a pas
+  « Sur l'écran d'accueil ». Simuler ces `userAgent` fait partie de l'audit.
+- **Suivre le parcours entier**, pas les écrans un par un : voir la vidéo,
+  cliquer, atterrir, écouter, installer. Les deux pannes les plus coûteuses
+  étaient aux jointures — un chemin relatif résolu pendant un jalon, une
+  consigne d'installation impossible à l'endroit où on la lisait.
+- **Dire ce qui n'est pas testable ici** plutôt que de le passer sous silence :
+  le rendu sonore réel, un vrai iPhone, et les règles des plateformes (YouTube
+  refuse les liens cliquables aux chaînes non vérifiées — aucun audit du dépôt
+  ne pouvait le révéler).
+
 ## Discrétion
 
 Le projet est public sous le nom Dari ; les personnes derrière ne le sont pas.
