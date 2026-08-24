@@ -1293,12 +1293,15 @@ function renderSituations(content) {
 
     const card = document.createElement("div");
     card.className = "line-card";
+    // La flèche de provenance est « → » et non « ↪ » : iOS rend U+21AA en
+    // présentation emoji, un carré bleu qui ressemble à un bouton au milieu
+    // d'une ligne de texte.
     card.innerHTML = `
       <div class="line-fr">${line.fr}</div>
       <div class="line-latin">${line.latin}</div>
       ${line.fem ? `<div class="line-fem">au féminin : <b>${line.fem}</b></div>` : ""}
       <div class="line-arabic arabic">${line.arabic}</div>
-      ${line.from ? `<div class="line-from">↪ ${line.from}</div>` : ""}
+      ${line.from ? `<div class="line-from">→ ${line.from}</div>` : ""}
       ${line.note ? `<p class="line-note">${line.note}</p>` : ""}
     `;
     const btn = document.createElement("button");
