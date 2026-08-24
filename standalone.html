@@ -3370,7 +3370,13 @@ function viderJalons() {
       /* l'adresse reste sur l'étape : 404.html couvre le rechargement */
     }
     jalonEnCours = false;
-    viderJalons();
+    // Le jalon suivant attend son tour au lieu de partir dans le même tick.
+    // Sans cette pause, l'adresse restaurée n'existe aucune milliseconde avant
+    // d'être remplacée : la balise ne relève qu'un seul changement là où il y
+    // en a deux, et en perd un. C'est ce qui faisait apparaître « 5-reponses »
+    // sans que « 1-reponse » ne se voie jamais, et manquer les écoutes qui
+    // suivent de près l'ouverture d'une situation.
+    setTimeout(viderJalons, 400);
   }, 400);
 }
 
