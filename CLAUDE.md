@@ -56,10 +56,18 @@ Frontière : le **contenu** (darija, sens, usage) est à elle. La **présentatio
 Cloudflare Web Analytics, sans cookie, sans événement personnalisé. Les étapes
 sont simulées par des changements d'adresse (`/etape/<nom>`).
 
-- **Lire « Visits », jamais « Page views ».** Les jalons changent l'adresse :
-  chaque étape franchie ajoute des pages vues qui ne sont pas des visiteurs, et
-  fait apparaître le site comme son propre référent. Les chemins `/etape/…`
-  comptent bien les gestes ; le total et la ligne d'auto-référent, non.
+- **« Visits » ne vaut plus rien : il est bloqué à zéro.** Chaque jalon produit
+  une page vue dont le référent est le site lui-même ; le 24 août, les 27 pages
+  vues de la journée étaient auto-référencées à 100 % et Cloudflare affichait
+  0 visite. Une visite n'est comptée que si le référent est externe — il ne
+  l'est jamais. Ni « Visits » ni « Page views » ne répondent donc à la question
+  « combien de personnes ».
+- **Compter les personnes par les chemins `/etape/…`, jamais par les totaux.**
+  Un jalon ne part qu'une fois par session (`jalonsVus`), donc chaque chemin
+  compte des sessions distinctes : `/etape/venu-de-story` = 4 signifie quatre
+  arrivées par la story. C'est la seule mesure fiable qui reste, et c'est à cela
+  que sert `?src=`. Le panneau « Navigation types » donne un second repère :
+  « Navigate » = chargements réels, « Unknown » = les jalons.
 - **Toujours étendre les listes avant de conclure.** Le panneau s'ouvre sur
   cinq lignes. Le 22 août, cette troncature m'a fait écrire trois jours durant
   que personne ne jouait au quiz et que le bascule Enfant/Adulte était mort :
