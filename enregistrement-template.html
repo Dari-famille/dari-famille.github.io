@@ -142,6 +142,43 @@ const MOTS_DES_VIDEOS = [
   }
 })();
 
+// Le lot des 200 a couvert les situations, c'est-à-dire les phrases entières.
+// Il a laissé de côté les briques : les sept mots avec lesquels on construit
+// toute question, les verbes du quotidien, et les mots qu'on entend cent fois
+// par jour. Une catégorie comme « Mots interrogatifs » n'a donc pas un seul
+// bouton vert, alors que ce sont les mots qu'un débutant prononce en premier.
+//
+// Vingt-neuf mots plutôt que les cent quarante-deux qui restent : on prend
+// ceux qui servent tous les jours, pas ceux qui complètent un dictionnaire.
+const LES_BRIQUES = [
+  // Les sept interrogatifs — aucune question sans eux
+  "Chkoun?", "Ach?", "Fin?", "Fuqach?", "3lach?", "Kifach?", "Chhal?",
+  // Les verbes du quotidien, à la première personne
+  "Bghit", "Nqder", "3reft", "Ghadi nmchi", "Ghadi nji", "Kanhder",
+  "Kanakol", "Kanchrb", "Kanne3s", "Kankhdem", "Kanchri", "Kan3ti",
+  // Ce qui ponctue toutes les conversations
+  "Safi", "Yallah", "Bezzaf", "Daba", "Mzyan", "Walou", "Bismillah",
+  // Les deux premières secondes d'un appel
+  "Allo, ana", "Kif dayra, jeddati ?",
+];
+
+(function lotDesBriques() {
+  const parLatin = new Map();
+  CATEGORIES.forEach((c) => {
+    c.items.forEach((i) => { if (!parLatin.has(i.latin)) parLatin.set(i.latin, i); });
+  });
+  SITUATIONS.forEach((s) => {
+    if (s.refs) return;
+    s.lines.forEach((l) => {
+      if (!l.faux && !parLatin.has(l.latin)) parLatin.set(l.latin, l);
+    });
+  });
+  const items = LES_BRIQUES.map((m) => parLatin.get(m)).filter(Boolean);
+  if (items.length) {
+    BATCHES.push({ id: "briques", label: "🧱 Les mots de tous les jours", items: items });
+  }
+})();
+
 SITUATIONS.forEach((s) => {
   if (s.refs) return; // le kit de survie ne fait que pointer ailleurs
   BATCHES.push({ id: "sit-" + s.id, label: s.emoji + " " + s.label, items: s.lines });

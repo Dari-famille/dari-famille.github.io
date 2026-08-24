@@ -1228,10 +1228,13 @@ function renderSituations(content) {
     const intro = document.createElement("p");
     intro.className = "note";
     intro.style.marginTop = "0";
+    // Court, parce que cette ligne s'intercale entre la bande des vidéos et
+    // les cartes, sur un écran déjà chargé à 65 % avant la première d'entre
+    // elles. Les cartes disent le reste toutes seules.
     intro.textContent =
       state.mode === "kid"
-        ? "Choisis un moment : les phrases pour t'en sortir tout seul."
-        : "Les phrases et les usages qui comptent dans un moment précis.";
+        ? "Choisis un moment."
+        : "Choisissez le moment.";
     content.appendChild(intro);
 
     const grid = document.createElement("div");
