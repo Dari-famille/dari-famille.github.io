@@ -72,15 +72,29 @@ sont simulées par des changements d'adresse (`/etape/<nom>`).
   cinq lignes. Le 22 août, cette troncature m'a fait écrire trois jours durant
   que personne ne jouait au quiz et que le bascule Enfant/Adulte était mort :
   `5-reponses`, `mode-kid` et `mode-adult` étaient simplement sous la coupure.
-- **Un jalon émis juste après un autre se perd.** `5-reponses` apparaît sans
-  que `1-reponse` n'apparaisse jamais, ce qui est impossible. La file espace
-  les étapes de 400 ms et cela ne suffit pas.
+- **Les jalons enchaînés se perdaient — corrigé le 24 août.** `viderJalons()`
+  était appelé dans le même tick que la restauration de l'adresse : l'état
+  restauré n'existait aucune milliseconde avant d'être remplacé, et la balise
+  n'en relevait qu'un sur deux. D'où `5-reponses` sans `1-reponse`, et les
+  écoutes manquantes quand elles suivaient de près l'ouverture d'une situation.
+  Le jalon suivant attend désormais 400 ms après la restauration.
+- **Rien ne se lit avant 24 heures. Aucune plateforme, aucune exception.**
+  Cette règle n'existait que pour YouTube ; le 25 août elle a été enfreinte
+  quatre fois dans la même journée sur Instagram. Une story lue à 3 h 30
+  affichait 17 vues et en avait 49 le lendemain. La même à 10h30 montrait zéro
+  arrivée et en avait quatre le soir. Un Reel jugé à 5 h a été déclaré sous le
+  plancher alors qu'il était dans le rythme. *Sur YouTube le délai est même de
+  72 h : twahachtek est passée de 348 à 563 en trois jours.*
 - **Ce que la mesure a établi :** écouter est le geste dominant (44 écoutes
   pour 76 visites) ; le quiz est joué mais rare. La valeur perçue est un
   dictionnaire de prononciation, pas un cours.
 - **Un jalon nouvellement déployé met deux ouvertures à se manifester** chez
   qui revient : le service worker sert d'abord l'ancienne version. Ne rien
   conclure d'un zéro pendant les premiers jours.
+- **Se retirer de la mesure avec `?nomesure=1`.** Le filtre « Country does not
+  equal Italy » ne protège que pendant le séjour en Sardaigne. Ouvrir l'app une
+  fois avec ce paramètre marque l'appareil et la balise n'y est plus chargée ;
+  `?mesure=1` lève la marque.
 - **Ne jamais ouvrir le site en ligne pour vérifier quelque chose** — chaque
   visite pollue une base de quelques dizaines. Utiliser `standalone.html` en
   local, ou une copie servie localement dont la balise a été retirée.
