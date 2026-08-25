@@ -127,7 +127,36 @@
        site, ce qui évite un bandeau. Chargée en module donc non bloquante :
        si elle échoue — hors-ligne, bloqueur de publicité — l'app fonctionne
        exactement pareil. -->
-  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js"
-    data-cf-beacon='{"token": "dd35a9f6fcd44fedbbea67fbd6055a60"}'></script>
+  <script>
+    // Les ouvertures de la maison faussent une base de quelques dizaines : le
+    // 25 août, 9 des 11 pages vues de la journée venaient d'un iPhone du foyer.
+    // Le filtre « pays » ne protégeait que pendant le séjour en Sardaigne et ne
+    // vaut plus au retour. Celui-ci marque l'appareil, une fois pour toutes :
+    //
+    //   …/?nomesure=1   pose la marque, la balise n'est plus jamais chargée ici
+    //   …/?mesure=1     la lève
+    //
+    // Sans stockage disponible, on mesure — ne pas mesurer doit être un choix
+    // explicite, jamais un effet de bord.
+    (function mesure() {
+      var CLE = "dari-nomesure";
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get("nomesure") === "1") localStorage.setItem(CLE, "1");
+        if (q.get("mesure") === "1") localStorage.removeItem(CLE);
+        if (localStorage.getItem(CLE) === "1") return;
+      } catch (e) {
+        /* stockage refusé : on charge la balise, comme avant */
+      }
+      // Chargée en module donc non bloquante : si elle échoue — hors-ligne,
+      // bloqueur de publicité — l'app fonctionne exactement pareil.
+      var s = document.createElement("script");
+      s.type = "module";
+      s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+      s.setAttribute("data-cf-beacon",
+        '{"token": "dd35a9f6fcd44fedbbea67fbd6055a60"}');
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
