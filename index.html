@@ -127,36 +127,18 @@
        site, ce qui évite un bandeau. Chargée en module donc non bloquante :
        si elle échoue — hors-ligne, bloqueur de publicité — l'app fonctionne
        exactement pareil. -->
-  <script>
-    // Les ouvertures de la maison faussent une base de quelques dizaines : le
-    // 25 août, 9 des 11 pages vues de la journée venaient d'un iPhone du foyer.
-    // Le filtre « pays » ne protégeait que pendant le séjour en Sardaigne et ne
-    // vaut plus au retour. Celui-ci marque l'appareil, une fois pour toutes :
-    //
-    //   …/?nomesure=1   pose la marque, la balise n'est plus jamais chargée ici
-    //   …/?mesure=1     la lève
-    //
-    // Sans stockage disponible, on mesure — ne pas mesurer doit être un choix
-    // explicite, jamais un effet de bord.
-    (function mesure() {
-      var CLE = "dari-nomesure";
-      try {
-        var q = new URLSearchParams(location.search);
-        if (q.get("nomesure") === "1") localStorage.setItem(CLE, "1");
-        if (q.get("mesure") === "1") localStorage.removeItem(CLE);
-        if (localStorage.getItem(CLE) === "1") return;
-      } catch (e) {
-        /* stockage refusé : on charge la balise, comme avant */
-      }
-      // Chargée en module donc non bloquante : si elle échoue — hors-ligne,
-      // bloqueur de publicité — l'app fonctionne exactement pareil.
-      var s = document.createElement("script");
-      s.type = "module";
-      s.src = "https://static.cloudflareinsights.com/beacon.min.js";
-      s.setAttribute("data-cf-beacon",
-        '{"token": "dd35a9f6fcd44fedbbea67fbd6055a60"}');
-      document.body.appendChild(s);
-    })();
+  <!-- La balise reste posée en dur. Elle a été injectée par un script du
+       25 au 29 août, pour permettre une marque d'appareil « ?nomesure=1 »
+       destinée à retirer le foyer de la mesure. Dès que ce changement a fini
+       de se propager — le 28, le service worker servant l'ancienne page deux
+       jours durant — Cloudflare a cessé de relever le navigateur et le
+       système : « Unknown » partout, là où on lisait Instagram, Android ou
+       MobileSafari. C'est précisément la donnée qui permettait de distinguer
+       le public du foyer, donc le remède coûtait plus cher que le mal.
+       On revient en arrière. La marque sera refaite au retour en France,
+       quand elle deviendra nécessaire — et testée sur ce point-là. -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon='{"token": "dd35a9f6fcd44fedbbea67fbd6055a60"}'></script>
   </script>
 </body>
 </html>
