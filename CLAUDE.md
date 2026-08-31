@@ -78,6 +78,20 @@ sont simulées par des changements d'adresse (`/etape/<nom>`).
   n'en relevait qu'un sur deux. D'où `5-reponses` sans `1-reponse`, et les
   écoutes manquantes quand elles suivaient de près l'ouverture d'une situation.
   Le jalon suivant attend désormais 400 ms après la restauration.
+- **Les vues se relèvent sur les compteurs publics, jamais dans Studio.** Le panneau
+  temps réel de YouTube Studio ne dit pas de quelle vidéo il parle : les 29 et 30 août,
+  « 461 → 498 → 572 » a été attribué aux trois refus pendant deux jours alors que c'était
+  la 04-pov. La grille de la chaîne et celle du profil Instagram donnent un chiffre par
+  vignette, et c'est le seul relevé qui ne peut pas se tromper de vidéo. *Corollaire :
+  quand un chiffre annoncé ne colle pas avec l'âge de la vidéo, c'est le rattachement
+  qui est faux, pas l'âge — c'est l'utilisateur qui avait raison sur les « 22 h ».*
+- **Aucune plateforme n'en prédit une autre, et les écarts vont dans les deux sens.**
+  « Ta mère croit que ton fils est timide » : 156 sur Instagram, 610 sur YouTube. « Les
+  trois refus » : 326 sur Instagram, 118 sur YouTube. Le hammam : premier sur Instagram,
+  dernier sur TikTok, même fichier. Ne jamais écarter une vidéo d'un dépôt au motif
+  qu'elle a raté ailleurs — c'est ce raisonnement qui a laissé la 04 de côté trois
+  semaines. *Et « le catalogue est mort » ne vaut que pour Instagram : sur YouTube une
+  vidéo de trois semaines peut faire le meilleur démarrage de la chaîne.*
 - **Rien ne se lit avant 24 heures. Aucune plateforme, aucune exception.**
   Cette règle n'existait que pour YouTube ; le 25 août elle a été enfreinte
   quatre fois dans la même journée sur Instagram. Une story lue à 3 h 30
