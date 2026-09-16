@@ -80,3 +80,14 @@ garderont l'ancienne version en cache.
   indiqué dans l'interface pour ne pas induire en erreur.
 - **Le contenu doit être relu par un locuteur natif** avant toute diffusion
   large : une faute dans une app d'apprentissage se propage.
+
+## Droits
+
+Le dépôt est public pour que GitHub Pages serve l'app ; il n'est pas libre de
+droits. Voir `LICENSE`. En particulier, les enregistrements du dossier `audio/`
+sont l'œuvre d'une locutrice native : ils sont servis pour être écoutés dans
+l'app, et leur réutilisation — redistribution, intégration ailleurs,
+entraînement d'une synthèse vocale — est interdite sans accord écrit.
+
+Les masters d'origine sont conservés hors du dépôt, datés : c'est la preuve
+d'antériorité si elle devient nécessaire.

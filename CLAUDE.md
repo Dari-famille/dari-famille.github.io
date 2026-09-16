@@ -105,10 +105,18 @@ sont simulées par des changements d'adresse (`/etape/<nom>`).
 - **Un jalon nouvellement déployé met deux ouvertures à se manifester** chez
   qui revient : le service worker sert d'abord l'ancienne version. Ne rien
   conclure d'un zéro pendant les premiers jours.
-- **Se retirer de la mesure avec `?nomesure=1`.** Le filtre « Country does not
-  equal Italy » ne protège que pendant le séjour en Sardaigne. Ouvrir l'app une
-  fois avec ce paramètre marque l'appareil et la balise n'y est plus chargée ;
-  `?mesure=1` lève la marque.
+- **Rien ne retire aujourd'hui la maison de la mesure.** La marque
+  `?nomesure=1` a existé du 25 au 29 août, portée par une balise injectée par
+  script ; cette injection faisait perdre à Cloudflare le navigateur et le
+  système, et elle a été retirée avec la marque (voir le commentaire dans
+  `index.html`). Le filtre « Country does not equal Italy » ne valait que pour
+  le séjour en Sardaigne. Depuis le retour en France, les lancements iPhone
+  depuis l'écran d'accueil peuvent être ceux du foyer. Toute nouvelle marque
+  doit être testée sur ce point précis : Cloudflare relève-t-il encore
+  navigateur et système ?
+- **Sur une longue période, Cloudflare échantillonne.** Vue « Last 2 weeks » le
+  13 septembre : tous les chiffres étaient des multiples de 10, et des chemins
+  relevés les jours précédents avaient disparu. Compter sur 24 heures ou 3 jours.
 - **Ne jamais ouvrir le site en ligne pour vérifier quelque chose** — chaque
   visite pollue une base de quelques dizaines. Utiliser `standalone.html` en
   local, ou une copie servie localement dont la balise a été retirée.
