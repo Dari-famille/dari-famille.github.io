@@ -4899,15 +4899,19 @@ function construireDemande(mot) {
 // L'ordre suit celui des publications, la plus récente en premier : c'est
 // celle qui amène du monde à l'instant où quelqu'un arrive.
 const MOTS_DES_VIDEOS = [
-  "Allah y3tik saha",         // « choukran après le repas, c'est tiède »
-  "Katehder darija ?",        // « on va te demander si tu parles darija »
-  "Mabrouk",                  // « on te dit mabrouk »
-  "Aji !",                    // « le seul mot que ton enfant doit comprendre »
-  "Lhamdulillah",             // « répondre ça va, c'est mal répondre »
-  "Inchallah",                // « inchallah veut parfois dire non »
-  "Chba3t, Allah y3tik saha", // « dire non à une belle-mère »
+  // Les plus récentes d'abord : celui qui arrive vient de voir l'une d'elles,
+  // et c'est ce mot-là qu'il cherche. Liste révisée le 8 novembre — elle datait
+  // d'avant le 25 août et ignorait vingt vidéos.
+  "Wakha",                    // « tu as entendu wakha cent fois »
+  "Allah ykhlik",             // « choukran est tiède »
+  "Kber bezzaf",              // « ce qu'elle dit de ton fils »
+  "Dewwez liya mmi, 3afak",   // « l'appel du dimanche »
+  "Fiya l3tach",              // « ton fils était seul et il avait soif »
+  "Ymken nel3ab m3akoum ?",   // « il est resté sur le côté »
+  "3ejbek lmghrib ?",         // « les questions qu'on te pose »
+  "Salam 3alikoum",           // « tu es arrivé et tu as dit bonjour »
+  // Trois classiques qui tournent encore, tous publiés en août.
   "Bsaha",                    // « on te félicite en sortant de la douche »
-  "Twahachtek",               // « on traduit par tu me manques, c'est faux »
   "Tbarkallah 3lih !",        // « ne complimente jamais un enfant sans ça »
 ];
 
